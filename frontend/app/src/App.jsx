@@ -6,6 +6,7 @@ import Register from './pages/RegisterPage'
 import UserDashboard from './components/UserDashboard'
 import AdminDashboard from './components/AdminDashboard'
 import ErrorBoundary from './components/ErrorBoundary'
+import HomePage from './pages/HomePage'
 import './App.css'
 import { AuthContext } from './contexts/AuthContent'
 
@@ -52,20 +53,29 @@ function App() {
           )}
           
           <Routes>
+            {/* Redirect root (/) to /home */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
+
+            {/* Public Home Page */}
+            <Route path="/home" element={<HomePage />} />
+
+            {/* Auth Pages */}
             <Route 
               path="/login" 
-              element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/"} />} 
+              element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/user"} />} 
             />
             <Route 
               path="/register" 
-              element={!isAuthenticated ? <Register /> : <Navigate to={isAdmin ? "/admin" : "/"} />} 
+              element={!isAuthenticated ? <Register /> : <Navigate to={isAdmin ? "/admin" : "/user"} />} 
             />
+
+            {/* Protected Routes */}
             <Route 
               path="/admin" 
               element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/login" />} 
             />
             <Route 
-              path="/" 
+              path="/user" 
               element={isAuthenticated && !isAdmin ? <UserDashboard /> : <Navigate to="/login" />} 
             />
           </Routes>
