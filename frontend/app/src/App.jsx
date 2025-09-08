@@ -65,7 +65,7 @@ function App() {
               element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/login" />} 
             />
             <Route 
-              path="/" 
+              path="/dashboard" 
               element={isAuthenticated && !isAdmin ? <UserDashboard /> : <Navigate to="/login" />} 
             />
           </Routes>
