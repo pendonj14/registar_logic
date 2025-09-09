@@ -1,185 +1,154 @@
-import { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useContext } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import axiosInstance from '../utils/axios';
 import { AuthContext } from '../contexts/AuthContent';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { handleLogin } = useContext(AuthContext);
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [rememberMe, setRememberMe] = useState(false);
+    const navigate = useNavigate();
+    const { handleLogin } = useContext(AuthContext);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
+        
+        try {
+            const response = await axiosInstance.post('/token/', {
+                username,
+                password
+            });
+            
+            const accessToken = response.data.access;
+            if (rememberMe) {
+                localStorage.setItem('access_token', accessToken);
+                localStorage.setItem('refresh_token', response.data.refresh);
+            }
+            
+            // Update axios headers
+            axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            
+            // Update app state through context
+            handleLogin(accessToken);
+            
+            // Get user role and navigate
+            const decoded = jwtDecode(accessToken);
+            if (decoded.is_staff) {
+                navigate('/admin', { replace: true });
+            } else {
+                navigate('/', { replace: true });
+            }
+        } catch (error) {
+            console.error('Login failed:', error);
+            setError(error.response?.data?.detail || 'Login failed');
+        }
+    };
 
-    try {
-      const response = await axiosInstance.post('/token/', {
-        username,
-        password
-      });
-
-      const accessToken = response.data.access;
-      localStorage.setItem('access_token', accessToken);
-      localStorage.setItem('refresh_token', response.data.refresh);
-
-      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-      handleLogin(accessToken);
-
-      const decoded = jwtDecode(accessToken);
-      if (decoded.is_staff) {
-        navigate('/admin', { replace: true });
-      } else {
-        navigate('/', { replace: true });
-      }
-    } catch (error) {
-      console.error('Login failed:', error);
-      setError(error.response?.data?.detail || 'Login failed. Please check your credentials.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 flex items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
-      style={{ backgroundImage: "url('/USTP-CDO.jpg')" }}
-    >
-      {/* Dark overlay */}
-      <div className="absolute inset-0 bg-black opacity-10"></div>
-
-      {/* Login card */}
-      <div className="relative w-full max-w-md px-4 z-10">
-        <div className="bg-white bg-opacity-20 rounded-xl shadow-2xl p-8 backdrop-blur-md">
-          {/* Logo/Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-blue-900">USTP CDO</h1>
-            <p className="text-blue-700 mt-2">
-              University of Science and Technology of Southern Philippines
-            </p>
-          </div>
-
-          <h2 className="text-2xl font-semibold text-gray-800 text-center mb-8">
-            Login to Your Account
-          </h2>
-
-          {/* Error Message */}
-          {error && (
-            <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-6 flex items-start">
-              <svg
-                className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 
-                  1.414L8.586 10l-1.293 1.293a1 1 0 
-                  101.414 1.414L10 11.414l1.293 
-                  1.293a1 1 0 001.414-1.414L11.414 
-                  10l1.293-1.293a1 1 0 
-                  00-1.414-1.414L10 8.586 
-                  8.707 7.293z"
-                  clipRule="evenodd"
-                />
-              </svg>
-              <span>{error}</span>
-            </div>
-          )}
-
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="username"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Username
-              </label>
-              <input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-blue-900 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                disabled={isLoading}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200"
-                disabled={isLoading}
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`w-full py-3 px-4 rounded-lg text-white font-semibold transition duration-200 ${
-                isLoading
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              {isLoading ? (
-                <div className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 
-                      0 0 5.373 0 12h4zm2 5.291A7.962 
-                      7.962 0 014 12H0c0 3.042 1.135 
-                      5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Processing...
+    return (
+        <div className="h-screen w-screen fixed inset-0 flex overflow-hidden">
+            {/* Left Half - Background Image */}
+            <div className="w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[15px_0_25px_-15px_rgba(234,179,8,0.6)] z-10">
+                <div className="relative z-10 h-screen flex flex-col items-center px-12 text-center">
+                    <div className="flex flex-col items-center mt-50">
+                        <h2 className="text-4xl font-bold text-indigo-950 mt-3">Welcome Back!</h2>
+                        <img src ="/logo.png" alt="logo" className="mx-auto h-90 w-auto fixed inset-y-30" />
+                        <p className="text-indigo-950 font-bold italic mt-20">Your Documents. Your Time.</p>
+                    </div>
+                    
+                    <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-12 w-full max-w-md">
+                        <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-sm sm:text-base text-center sm:text-left break-words">Simplifying Service, One Request at a Time</p>
+                        </div>
+                        <p className="text-neutral-500 text-sm leading-relaxed font-normal text-justify">
+                            Powering a seamless process for the Office of the University Registrar at USTP-CDO—where academic transactions meet digital ease.
+                        </p>
+                    </div>
                 </div>
-              ) : (
-                'Login'
-              )}
-            </button>
-          </form>
+            </div>
 
-          {/* Footer */}
-          <div className="mt-8 text-center text-sm text-gray-600">
-            <p>Need help? Contact support at support@ustp.edu.ph</p>
-          </div>
+            {/* Right Half - Login Form */}
+            <div className="w-1/2 bg-white flex flex-col items-center justify-center p-12 relative overflow-hidden">
+                <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
+                <div className="absolute -top-50 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
+                <div className="absolute -bottom-10 -right-50 w-[25rem] h-[25rem] bg-[radial-gradient(circle,rgba(255,237,195,0.6),transparent_70%)] rounded-full"></div>
+                <div className="absolute top-8 right-8">
+                    <p className="text-gray-600">
+                        Don't have an account? 
+                        <Link to="/register" className="text-indigo-950 font-semibold ml-2 hover:text-indigo-950">
+                            Sign Up!
+                        </Link>
+                    </p>
+                </div>
+
+                <div className="w-full max-w-md">
+                    <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center">Login</h1>
+
+                    <form onSubmit={handleSubmit} className="w-full space-y-6">
+                        <div className="space-y-2">
+                            <input
+                                id="username"
+                                type="text"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                required
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
+                                autofill:bg-white autofill:text-gray-900
+                                [-webkit-text-fill-color:theme(colors.gray.900)]
+                                [-webkit-box-shadow:0_0_0px_1000px_white_inset]
+                                transition-all duration-500"
+                                placeholder="Student ID"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <input
+                                id="password"
+                                type="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
+                                autofill:bg-white autofill:text-gray-900
+                                [-webkit-text-fill-color:theme(colors.gray.900)]
+                                [-webkit-box-shadow:0_0_0px_1000px_white_inset]
+                                transition-all duration-500"
+                                placeholder="Password"
+                            />
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                                <input
+                                    id="rememberMe"
+                                    type="checkbox"
+                                    checked={rememberMe}
+                                    onChange={() => setRememberMe(!rememberMe)}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                />
+                                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                                    Remember me
+                                </label>
+                            </div>
+                            
+                            <a href="#" className="text-sm text-indigo-950 hover:text-blue-950">
+                                Forgot password?
+                            </a>
+                        </div>
+
+                        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                        
+                        <button 
+                            type="submit"
+                            className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50"
+                        >
+                            Login
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
   );
 };
 

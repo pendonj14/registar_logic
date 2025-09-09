@@ -75,9 +75,9 @@ function App() {
               path="/admin"
               element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/login" />}
             />
-            <Route
-              path="/user"
-              element={isAuthenticated && !isAdmin ? <UserDashboard /> : <Navigate to="/login" />}
+            <Route 
+              path="/dashboard" 
+              element={isAuthenticated && !isAdmin ? <UserDashboard /> : <Navigate to="/login" />} 
             />
           </Routes>
         </div>
