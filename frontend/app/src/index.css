@@ -17,6 +17,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -65,3 +66,19 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+
+input, select, textarea {
+  color: #111827; /* same as Tailwind's gray-900 */
+}
+
+/* Hide scrollbar but still allow scrolling */
+.scroll-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}
+
+.scroll-hidden {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+
