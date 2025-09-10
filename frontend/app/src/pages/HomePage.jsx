@@ -77,7 +77,7 @@ const HomePage = () => {
       </header>
 
       {/* Main */}
-      <main className="relative z-10 flex flex-1 px-4 md:px-16 py-8">
+      <main className="relative z-10 flex flex-1 px-4 md:px-16 py-8 mt-9 md:mt-0">
         <div className="w-full flex flex-col items-center text-center md:items-start md:text-left md:max-w-2xl">
           
           {/* Logo */}
