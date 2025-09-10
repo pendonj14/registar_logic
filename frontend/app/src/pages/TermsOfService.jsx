@@ -38,7 +38,7 @@ const TermsOfService = () => {
             <Link to="/" className="hover:underline">
               Home
             </Link>
-            <Link to="/terms" className="hover:underline">
+            <Link to="/terms" className="hover:underline text-blue-700">
               Terms of Service
             </Link>
             <Link to="/privacy" className="hover:underline mr-20">
@@ -140,7 +140,7 @@ const TermsOfService = () => {
           {/* Sections */}
           <section className="space-y-8 max-w-2xl text-justify text-base md:text-md leading-relaxed mx-auto">
             <div id="introduction">
-              <h1 className="text-2xl font-extrabold mb-6 text-blue-950 ">Terms of Service</h1>
+              <h1 className="text-2xl font-extrabold mb-6 text-blue-950  ">Terms of Service</h1>
               <p>
                 Welcome to the iREQUEST! We're here to provide a seamless way to handle your academic document requests. These Terms of Service ("Terms") outline the rules and guidelines for using our platform. By accessing or using iREQUEST, you agree to follow these Terms.
               </p>

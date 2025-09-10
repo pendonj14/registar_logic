@@ -54,7 +54,7 @@ const HomePage = () => {
           </div>
 
           <nav className="hidden md:flex gap-6 text-lg text-gray-800 mr-20">
-            <Link to="/" className="hover:underline">Home</Link>
+            <Link to="/" className="hover:underline text-blue-600">Home</Link>
             <Link to="/terms" className="hover:underline">Terms of Service</Link>
             <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
           </nav>
