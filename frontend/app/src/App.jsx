@@ -2,7 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Login from './pages/LoginPage';
-import Register from './pages/RegisterPage';
+import RegisterPage from './pages/RegisterPage';
 import UserDashboard from './components/UserDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -68,7 +68,7 @@ function App() {
             />
             <Route
               path="/register"
-              element={!isAuthenticated ? <Register /> : <Navigate to={isAdmin ? "/admin" : "/user"} />}
+              element={!isAuthenticated ? <RegisterPage /> : <Navigate to={isAdmin ? "/admin" : "/user"} />}
             />
 
             <Route
