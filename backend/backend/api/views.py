@@ -21,9 +21,18 @@ def get_requests(request):
 
 @api_view(['POST'])
 def create_request(request):
-    serializer = StudentRequestSerializer(data=request.data)
+    data = request.data.copy()
+    data['user'] = request.user.id  # Automatically set the user from the request
+    
+    serializer = StudentRequestSerializer(data=data)
     if serializer.is_valid():
-        serializer.save()
+        # Handle file upload for eclearance_proof if present
+        eclearance_proof = request.FILES.get('eclearance_proof')
+        if eclearance_proof:
+            instance = serializer.save(eclearance_proof=eclearance_proof)
+        else:
+            instance = serializer.save()
+            
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -87,7 +96,9 @@ def register_user(request):
             middle_name=data.get('middle_name', ''),  # Optional
             last_name=data['last_name'],
             extension_name=data.get('extension_name', ''),  # Optional
-            birth_date=data.get('birth_date')  # Add this line
+            birth_date=data.get('birth_date'),  # Add this line
+            college_program = data.get('college_program'),  # Optional, add program field
+            contact_number=data.get('contact_number')
         )
 
         return Response({

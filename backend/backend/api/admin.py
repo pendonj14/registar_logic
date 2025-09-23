@@ -3,9 +3,11 @@ from .models import StudentRequest, UserProfile
 
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
-    list_display = ('get_user_name', 'get_birth_date', 'program', 'year_level', 'college', 'affiliation', 'request', 'created_at')
-    search_fields = ('user__profile__first_name', 'user__profile__last_name', 'request')
-    list_filter = ('created_at',)
+    list_display = ('get_user_name', 'get_birth_date', 'year_level', 'affiliation', 'request', 
+                   'clearance_status', 'is_graduate', 'last_attended', 'created_at', 'request_purpose', 'request_status')
+    search_fields = ('user__profile__first_name', 'user__profile__last_name', 'request', 
+                    'year_level', 'request_purpose')
+    list_filter = ('created_at', 'clearance_status', 'is_graduate', 'affiliation')
 
     def get_user_name(self, obj):
         return f"{obj.user.profile.first_name} {obj.user.profile.middle_name} {obj.user.profile.last_name} {obj.user.profile.extension_name}".strip()
@@ -15,7 +17,7 @@ class StudentRequestAdmin(admin.ModelAdmin):
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('get_full_name', 'user', 'birth_date', 'created_at')
+    list_display = ('get_full_name', 'user', 'contact_number', 'birth_date', 'college_program','created_at')
     search_fields = ('first_name', 'middle_name', 'last_name', 'user__email')
     list_filter = ('created_at',)
 
