@@ -4,7 +4,7 @@ from .models import StudentRequest, UserProfile
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
     list_display = ('get_user_name', 'get_birth_date', 'year_level', 'affiliation', 'request', 
-                   'clearance_status', 'is_graduate', 'last_attended', 'created_at')
+                   'clearance_status', 'is_graduate', 'last_attended', 'created_at', 'request_purpose', 'request_status')
     search_fields = ('user__profile__first_name', 'user__profile__last_name', 'request', 
                     'year_level', 'request_purpose')
     list_filter = ('created_at', 'clearance_status', 'is_graduate', 'affiliation')

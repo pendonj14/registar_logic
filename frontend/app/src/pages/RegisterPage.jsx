@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from '../utils/axios';
 
 const Register = () => {
     const [formData, setFormData] = useState({
@@ -11,179 +11,133 @@ const Register = () => {
         middle_name: '',
         last_name: '',
         extension_name: '',
-        birth_date: ''
+        birth_date: '',
+        college_program: '',
+        contact_number: ''
     });
+
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value
-        });
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
+        // Minimal required fields
+        if (!formData.username || !formData.email || !formData.password || !formData.first_name || !formData.last_name) {
+            setError('Please fill out username, email, password, first name and last name.');
+            return;
+        }
+
+        setLoading(true);
         try {
-            const response = await axios.post('http://127.0.0.1:8000/api/register/', formData);
-            console.log('Registration successful:', response.data);
-            navigate('/login');
-        } catch (error) {
-            console.error('Registration failed:', error);
-            setError(error.response?.data?.error || 'Registration failed');
+            const payload = { ...formData };
+            // if birth_date is empty string, remove it so backend gets None or omits it
+            if (!payload.birth_date) delete payload.birth_date;
+
+            const res = await axios.post('/register/', payload);
+            if (res.status === 201 || res.status === 200) {
+                navigate('/login');
+            } else {
+                setError('Unexpected response from server.');
+            }
+        } catch (err) {
+            if (err.response && err.response.data) {
+                const data = err.response.data;
+                if (typeof data === 'string') setError(data);
+                else if (data.error) setError(Array.isArray(data.error) ? data.error.join(', ') : data.error);
+                else if (data.username) setError(Array.isArray(data.username) ? data.username.join(', ') : data.username);
+                else if (data.email) setError(Array.isArray(data.email) ? data.email.join(', ') : data.email);
+                else {
+                    // Show first validation error if present
+                    const firstKey = Object.keys(data)[0];
+                    if (firstKey) {
+                        const val = data[firstKey];
+                        setError(typeof val === 'string' ? val : (Array.isArray(val) ? val.join(', ') : JSON.stringify(val)));
+                    } else {
+                        setError('Registration failed.');
+                    }
+                }
+            } else {
+                setError('Network error or server not reachable.');
+            }
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-                <div>
-                    <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                        Create your account
-                    </h2>
-                </div>
-
-                {error && (
-                    <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                        {error}
-                    </div>
-                )}
-
-                <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-                    <div className="rounded-md shadow-sm space-y-4">
-                        {/* Account Information */}
-                        <div>
-                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">
-                                Student ID
-                            </label>
-                            <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.username}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                                Email
-                            </label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.email}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                                Password
-                            </label>
-                            <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.password}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        {/* Personal Information */}
-                        <div>
-                            <label htmlFor="first_name" className="block text-sm font-medium text-gray-700">
-                                First Name
-                            </label>
-                            <input
-                                id="first_name"
-                                name="first_name"
-                                type="text"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.first_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="middle_name" className="block text-sm font-medium text-gray-700">
-                                Middle Name (Optional)
-                            </label>
-                            <input
-                                id="middle_name"
-                                name="middle_name"
-                                type="text"
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.middle_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="last_name" className="block text-sm font-medium text-gray-700">
-                                Last Name
-                            </label>
-                            <input
-                                id="last_name"
-                                name="last_name"
-                                type="text"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.last_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="extension_name" className="block text-sm font-medium text-gray-700">
-                                Name Extension (Optional)
-                            </label>
-                            <input
-                                id="extension_name"
-                                name="extension_name"
-                                type="text"
-                                placeholder="e.g., Jr., Sr., III"
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.extension_name}
-                                onChange={handleChange}
-                            />
-                        </div>
-
-                        <div>
-                            <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700">
-                                Birth Date
-                            </label>
-                            <input
-                                id="birth_date"
-                                name="birth_date"
-                                type="date"
-                                required
-                                className="appearance-none rounded relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                value={formData.birth_date}
-                                onChange={handleChange}
-                            />
-                        </div>
+        <div style={{ maxWidth: 700, margin: '24px auto', padding: 20 }}>
+            <h2>Register</h2>
+            {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
+            <form onSubmit={handleSubmit}>
+                <div style={{ display: 'grid', gap: 8 }}>
+                    <div>
+                        <label>Student ID</label>
+                        <input name="username" value={formData.username} onChange={handleChange} required />
                     </div>
 
                     <div>
-                        <button
-                            type="submit"
-                            className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                            Register
+                        <label>Email</label>
+                        <input type="email" name="email" value={formData.email} onChange={handleChange} required />
+                    </div>
+
+                    <div>
+                        <label>Password</label>
+                        <input type="password" name="password" value={formData.password} onChange={handleChange} required />
+                    </div>
+
+                    <hr />
+                    <h4>Profile</h4>
+
+                    <div>
+                        <label>First name</label>
+                        <input name="first_name" value={formData.first_name} onChange={handleChange} required />
+                    </div>
+
+                    <div>
+                        <label>Middle name</label>
+                        <input name="middle_name" value={formData.middle_name} onChange={handleChange} />
+                    </div>
+
+                    <div>
+                        <label>Last name</label>
+                        <input name="last_name" value={formData.last_name} onChange={handleChange} required />
+                    </div>
+
+                    <div>
+                        <label>Extension name</label>
+                        <input name="extension_name" value={formData.extension_name} onChange={handleChange} />
+                    </div>
+
+                    <div>
+                        <label>Birth date</label>
+                        <input type="date" name="birth_date" value={formData.birth_date} onChange={handleChange} />
+                    </div>
+
+                    <div>
+                        <label>College / Program</label>
+                        <input name="college_program" value={formData.college_program} onChange={handleChange} />
+                    </div>
+
+                    <div>
+                        <label>Contact number</label>
+                        <input name="contact_number" value={formData.contact_number} onChange={handleChange} />
+                    </div>
+
+                    <div style={{ marginTop: 12 }}>
+                        <button type="submit" disabled={loading}>
+                            {loading ? 'Registering…' : 'Register'}
                         </button>
                     </div>
-                </form>
-            </div>
+                </div>
+            </form>
         </div>
     );
 };

@@ -41,6 +41,7 @@ class StudentRequest(models.Model):
 
     #Part 3
     request_purpose = models.CharField(max_length=250, default="Not specified",)  # Providing a default value for existing records
+    request_status = models.CharField(max_length=50, default="Pending")  # New field with default value
 
     def __str__(self):
         return f"{self.user.profile.first_name} {self.user.profile.last_name} - {self.request}"
