@@ -71,7 +71,7 @@ const Login = () => {
                     {/* Welcome text + logo */}
                     <div className="flex flex-col items-center mt-30 md:mt-40">
                         <h2 className="text-4xl font-bold text-indigo-950 mt-3">Welcome Back!</h2>
-                        <img src="/logo.png" alt="logo" className="mx-auto h-90 w-auto fixed inset-y-15 -translate-y-6 md:translate-y-6" />
+                        <img src="/logo.png" alt="logo" className="mx-auto h-[22rem] w-auto fixed inset-y-[3.75rem] -translate-y-6 md:translate-y-6" />
                         <p className="text-indigo-950 font-bold italic mt-20">Your Documents. Your Time.</p>
                     </div>
 
