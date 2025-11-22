@@ -11,15 +11,24 @@ from django.contrib.auth.hashers import make_password
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
-
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from django.db import transaction #
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated]) # Secure the view
 def get_requests(request):
-    requests = StudentRequest.objects.all()
+    # Logic: If user is staff/admin, show all. If student, show only theirs.
+    if request.user.is_staff:
+        requests = StudentRequest.objects.all()
+    else:
+        requests = StudentRequest.objects.filter(user=request.user)
+        
     serializer = StudentRequestSerializer(requests, many=True)
     return Response(serializer.data)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_request(request):
     data = request.data.copy()
     data['user'] = request.user.id  # Automatically set the user from the request
@@ -59,64 +68,65 @@ def manage_request(request, pk):
 def register_user(request):
     data = request.data
     try:
-        # Check if username already exists
-        if User.objects.filter(username=data['username']).exists():
-            return Response(
-                {'error': 'Username already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
+        with transaction.atomic():
+            # Check if username already exists
+            if User.objects.filter(username=data['username']).exists():
+                return Response(
+                    {'error': 'Username already exists'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Check if email already exists
+            if User.objects.filter(email=data['email']).exists():
+                return Response(
+                    {'error': 'Email already exists'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Validate password
+            try:
+                validate_password(data['password'])
+            except ValidationError as e:
+                return Response(
+                    {'error': e.messages}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Create user
+            user = User.objects.create(
+                username=data['username'],
+                email=data['email'],
+                password=make_password(data['password'])
             )
-        
-        # Check if email already exists
-        if User.objects.filter(email=data['email']).exists():
-            return Response(
-                {'error': 'Email already exists'}, 
-                status=status.HTTP_400_BAD_REQUEST
+
+            # Create user profile
+            profile = UserProfile.objects.create(
+                user=user,
+                first_name=data['first_name'],
+                middle_name=data.get('middle_name', ''),  # Optional
+                last_name=data['last_name'],
+                extension_name=data.get('extension_name', ''),  # Optional
+                birth_date=data.get('birth_date'),  # Add this line
+                college_program = data.get('college_program'),  # Optional, add program field
+                contact_number=data.get('contact_number')
             )
 
-        # Validate password
-        try:
-            validate_password(data['password'])
-        except ValidationError as e:
-            return Response(
-                {'error': e.messages}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
-        # Create user
-        user = User.objects.create(
-            username=data['username'],
-            email=data['email'],
-            password=make_password(data['password'])
-        )
-
-        # Create user profile
-        profile = UserProfile.objects.create(
-            user=user,
-            first_name=data['first_name'],
-            middle_name=data.get('middle_name', ''),  # Optional
-            last_name=data['last_name'],
-            extension_name=data.get('extension_name', ''),  # Optional
-            birth_date=data.get('birth_date'),  # Add this line
-            college_program = data.get('college_program'),  # Optional, add program field
-            contact_number=data.get('contact_number')
-        )
-
-        return Response({
-            'message': 'User created successfully',
-            'user': {
-                'id': user.id,
-                'username': user.username,
-                'email': user.email,
-                'profile': {
-                    'first_name': profile.first_name,
-                    'middle_name': profile.middle_name,
-                    'last_name': profile.last_name,
-                    'extension_name': profile.extension_name,
-                    'birth_date': profile.birth_date,  # Add this line
-                    'full_name': str(profile)
+            return Response({
+                'message': 'User created successfully',
+                'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'profile': {
+                        'first_name': profile.first_name,
+                        'middle_name': profile.middle_name,
+                        'last_name': profile.last_name,
+                        'extension_name': profile.extension_name,
+                        'birth_date': profile.birth_date,  # Add this line
+                        'full_name': str(profile)
+                    }
                 }
-            }
-        }, status=status.HTTP_201_CREATED)
+            }, status=status.HTTP_201_CREATED)
 
     except KeyError as e:
         return Response({
