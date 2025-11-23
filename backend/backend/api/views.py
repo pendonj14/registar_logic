@@ -24,25 +24,32 @@ def get_requests(request):
     else:
         requests = StudentRequest.objects.filter(user=request.user)
         
-    serializer = StudentRequestSerializer(requests, many=True)
+    serializer = StudentRequestSerializer(
+    requests,
+    many=True,
+    context={'request': request}
+)
     return Response(serializer.data)
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def create_request(request):
-    data = request.data.copy()
-    data['user'] = request.user.id  # Automatically set the user from the request
+def create_request(request): 
+    serializer = StudentRequestSerializer(
+    data=request.data,
+    context={'request': request}
+    )
     
-    serializer = StudentRequestSerializer(data=data)
     if serializer.is_valid():
         # Handle file upload for eclearance_proof if present
         eclearance_proof = request.FILES.get('eclearance_proof')
+        
         if eclearance_proof:
-            instance = serializer.save(eclearance_proof=eclearance_proof)
+            serializer.save(user=request.user, eclearance_proof=eclearance_proof)
         else:
-            instance = serializer.save()
+            serializer.save(user=request.user)
             
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['PUT', 'DELETE'])
@@ -53,7 +60,11 @@ def manage_request(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'PUT':
-        serializer = StudentRequestSerializer(student_request, data=request.data)
+        serializer = StudentRequestSerializer(
+            student_request,
+            data=request.data,
+            context={'request': request}
+        )
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)

@@ -1,6 +1,8 @@
 from django.urls import path
 from .views import get_requests, create_request, manage_request, register_user, MyTokenObtainPairView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.conf import settings
+from django.conf.urls.static import static
 
 
 urlpatterns = [
@@ -11,3 +13,6 @@ urlpatterns = [
     path('register/', register_user, name='register'),
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -3,17 +3,19 @@ from .models import StudentRequest, UserProfile
 
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
-    list_display = ('get_user_name', 'get_birth_date', 'year_level', 'affiliation', 'request', 
-                   'clearance_status', 'is_graduate', 'last_attended', 'created_at', 'request_purpose', 'request_status')
+    list_display = ('studentid','user_name', 'birth_date', 'year_level', 'affiliation', 'request', 
+                   'clearance_status', 'is_graduate', 'last_attended', 'created_at', 'request_purpose', 'request_status', 'eclearance_proof')
     search_fields = ('user__profile__first_name', 'user__profile__last_name', 'request', 
                     'year_level', 'request_purpose')
     list_filter = ('created_at', 'clearance_status', 'is_graduate', 'affiliation')
 
-    def get_user_name(self, obj):
+    def user_name(self, obj):
         return f"{obj.user.profile.first_name} {obj.user.profile.middle_name} {obj.user.profile.last_name} {obj.user.profile.extension_name}".strip()
-    get_user_name.short_description = 'Name'
-    def get_birth_date(self, obj):
+    user_name.short_description = 'Name'
+    def birth_date(self, obj):
         return obj.user.profile.birth_date
+    def studentid(self, obj):
+        return obj.user.profile.user
 
 @admin.register(UserProfile)
 class UserProfileAdmin(admin.ModelAdmin):
