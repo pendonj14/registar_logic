@@ -15,6 +15,8 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     # We define user explicitly as ReadOnly. 
     # This tells Django: "Don't expect the frontend to send the user ID."
     user = serializers.ReadOnlyField(source='user.username')
+    email = serializers.EmailField(source='user.email', read_only=True)
+
 
     class Meta:
         model = StudentRequest
