@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from django.db import transaction #
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated]) # Secure the view
 def get_requests(request):
@@ -52,18 +53,21 @@ def create_request(request):
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT', 'DELETE'])
+@api_view(['PUT', 'PATCH', 'DELETE'])
 def manage_request(request, pk):
     try:
         student_request = StudentRequest.objects.get(pk=pk)
     except StudentRequest.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'PUT':
+    # CHANGE 2: Check for both PUT and PATCH
+    if request.method in ['PUT', 'PATCH']:
         serializer = StudentRequestSerializer(
             student_request,
             data=request.data,
-            context={'request': request}
+            context={'request': request},
+            # CHANGE 3: Enable partial updates if the method is PATCH
+            partial=(request.method == 'PATCH')
         )
         if serializer.is_valid():
             serializer.save()

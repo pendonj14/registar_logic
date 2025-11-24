@@ -34,6 +34,7 @@ class StudentRequest(models.Model):
     #Part 1
     clearance_status = models.BooleanField(default=False)
     eclearance_proof = models.ImageField(upload_to='clearance_proofs/', blank=True, null=True)
+    payment_proof = models.ImageField(upload_to='payment_proofs/', blank=True, null=True)
     is_graduate = models.BooleanField(default=False, blank=True, null=True)
     last_attended = models.CharField(max_length=100, blank=True, null=True)
     #Part 2
@@ -42,6 +43,7 @@ class StudentRequest(models.Model):
     #Part 3
     request_purpose = models.CharField(max_length=250, default="Not specified",)  # Providing a default value for existing records
     request_status = models.CharField(max_length=50, default="Pending")  # New field with default value
+    claim_date = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return f"{self.user.profile.first_name} {self.user.profile.last_name} - {self.request}"
