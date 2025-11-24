@@ -30,23 +30,25 @@ const Login = () => {
                 password
             });
             
-            // Extract access token
+ // Extract access token
             const accessToken = response.data.access;
+            const refreshToken = response.data.refresh;
 
-            // If "Remember Me" is checked, store tokens in localStorage
-            if (rememberMe) {
-                localStorage.setItem('access_token', accessToken);
-                localStorage.setItem('refresh_token', response.data.refresh);
-            }
+            // FIX: Determine storage type based on Remember Me
+            const storage = rememberMe ? localStorage : sessionStorage;
+
+            // Save tokens to the chosen storage
+            storage.setItem('access_token', accessToken);
+            storage.setItem('refresh_token', refreshToken);
             
-            // Update axios default headers for authenticated requests
+            // Update axios default headers
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             
-            // Update global auth state via context
-            handleLogin(accessToken);
-            
-            // Decode JWT to check user role
+            // Decode JWT 
             const decoded = jwtDecode(accessToken);
+
+            // Pass decoded data to handleLogin to save decoding twice
+            handleLogin(accessToken, decoded);
 
             // Redirect user depending on their role
             if (decoded.is_staff) {

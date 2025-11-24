@@ -89,8 +89,8 @@ export const Sidebar = ({ activeTab, onTabChange, pendingCount, topayRequests , 
             icon={CheckCircle} 
             label= "Confirmed"
             badge={confirmedRequests}
-            active={activeTab === 'Confirmation'}
-            onClick={() => onTabChange('Confirmation')}
+            active={activeTab === 'Confirmed'}
+            onClick={() => onTabChange('Confirmed')}
             />
             <NavItem 
             icon={Send} 

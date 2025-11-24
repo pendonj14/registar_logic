@@ -9,50 +9,67 @@ import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import TermsOfService from './pages/TermsOfService';
 import './App.css';
-import { AuthContext } from './contexts/AuthContent';
+// CHECK THIS IMPORT NAME: Usually it is AuthContext.js, not AuthContent
+import { AuthContext } from './contexts/AuthContent'; 
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
+  // NEW: Add a loading state
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
+    // Check both local and session storage (see Login fix below)
+    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+    
     if (token) {
       try {
         const decoded = jwtDecode(token);
-        setIsAuthenticated(true);
-        setIsAdmin(decoded.is_staff || false);
-        setUser(decoded);
+        const currentTime = Date.now() / 1000;
+
+        // Check if token is expired
+        if (decoded.exp < currentTime) {
+           handleLogout();
+        } else {
+           setIsAuthenticated(true);
+           setIsAdmin(decoded.is_staff || false);
+           setUser(decoded);
+        }
       } catch (error) {
         console.error('Token decode error:', error);
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
+        handleLogout();
       }
     }
+    // Set loading to false after check is done
+    setLoading(false);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
+    sessionStorage.removeItem('access_token'); // Clear session too
+    sessionStorage.removeItem('refresh_token');
     setIsAuthenticated(false);
     setIsAdmin(false);
     setUser(null);
   };
 
-  const handleLogin = (token) => {
-    const decoded = jwtDecode(token);
+  const handleLogin = (token, decoded) => {
     setIsAuthenticated(true);
     setIsAdmin(decoded.is_staff || false);
     setUser(decoded);
   };
 
+  // Prevent rendering routes until we know auth status
+  if (loading) {
+    return <div className="flex h-screen w-screen items-center justify-center">Loading...</div>; 
+  }
+
   return (
     <AuthContext.Provider value={{ handleLogin, handleLogout, isAuthenticated, isAdmin, user }}>
       <ErrorBoundary>
         <div>
-
-
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<HomePage />} />
@@ -60,11 +77,11 @@ function App() {
 
             <Route
               path="/login"
-              element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/user"} />}
+              element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} />}
             />
             <Route
               path="/register"
-              element={!isAuthenticated ? <RegisterPage /> : <Navigate to={isAdmin ? "/admin" : "/user"} />}
+              element={!isAuthenticated ? <RegisterPage /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} />}
             />
 
             <Route

@@ -82,7 +82,7 @@ const AdminDashboard = () => {
   };
 
   const filteredRequests = requests
-    .filter(req => req.request_status === activeTab)
+    .filter(req => req.request_status?.toLowerCase() === activeTab.toLowerCase())
     .sort((a, b) => {
       // ONLY apply priority sorting for the 'To Pay' tab
       if (activeTab === 'To Pay') {
@@ -153,12 +153,14 @@ const AdminDashboard = () => {
                 <div key={req.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-start gap-4 hover:shadow-md transition-shadow pr-10 ">
                   <div className={`p-3 rounded-xl ${
                       req.request_status === 'Pending' ? 'bg-yellow-50 text-yellow-600 mt-3' : 
+                      req.request_status === 'Rejected' ? 'bg-red-50 text-red-600 mt-3' :
                       req.request_status === 'To Pay' ? 'bg-blue-50 text-blue-600 mt-3' :
-                      'bg-green-50 text-green-600'
+                      'bg-green-50 text-green-600 mt-3'
                   }`}>
                     {req.request_status === 'Pending' ? <Clock size={24} /> : 
                     req.request_status === 'To Pay' ? <CreditCard size={24} /> : 
-                    <CheckCircle size={24} />}
+                      <CheckCircle size={24}/>
+                    }
                   </div>
 
                   <div className="flex-1">
@@ -196,7 +198,7 @@ const AdminDashboard = () => {
                         {/* NOTE: If req.payment_proof_url is null, NO BUTTON is rendered here. */}
 
                         {/* --- CONFIRMATION BUTTON --- */}
-                        {req.request_status === 'Confirmation' && (
+                        {req.request_status === 'Confirmed' && (
                           <button 
                             onClick={() => handleStatusUpdate(req.id, 'For Release')}
                             className="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
