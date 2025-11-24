@@ -10,12 +10,14 @@ import {
 import axiosInstance from '../utils/axios';
 import { Sidebar } from '../components/SideBar';
 import RequestModal from '../components/RequestModal';
+import PaymentVerificationModal from '../components/PaymentVerificationModal';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Pending');
   const [requests, setRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   useEffect(() => {
@@ -43,35 +45,58 @@ const AdminDashboard = () => {
     setSelectedRequest(null);
   };
 
+  // --- Handlers for PAYMENT Modal ---
+  const handleOpenPayment = (request) => {
+    setSelectedRequest(request);
+    setIsPaymentModalOpen(true);
+  };
+
+  const handleClosePayment = () => {
+    setIsPaymentModalOpen(false);
+    setSelectedRequest(null);
+  };
+
   // 4. Handle Approve / Reject Logic
-  const handleStatusUpdate = async (id, newStatus) => {
+  const handleStatusUpdate = async (id, newStatus, claimDate = null) => {
     try {
-      // We send ONLY the status update
-      const response = await axiosInstance.patch(`/requests/${id}/`, { 
-        request_status: newStatus 
-      });
+      const payload = { request_status: newStatus };
       
-      // Update local state immediately
+      // If claimDate is provided (from the Payment Modal), add it to the payload
+      if (claimDate) {
+        payload.claim_date = claimDate;
+      }
+
+      const response = await axiosInstance.patch(`/requests/${id}/`, payload);
+      
+      // Update local state
       setRequests(prev => prev.map(r => r.id === id ? response.data : r));
       
+      // Close any open modals
       handleCloseModal();
-      // Optional: Add an alert or toast notification here "Request Approved!"
+      handleClosePayment();
+      
     } catch (error) {
       console.error(`Error updating request to ${newStatus}:`, error);
       alert("Failed to update request. Please try again.");
     }
   };
 
-  const deleteRequest = async (id) => {
-    try {
-      await axiosInstance.delete(`/requests/${id}/`);
-      setRequests(prev => prev.filter(r => r.id !== id));
-    } catch (error) {
-      console.error('Error deleting request:', error);
-    }
-  };
+  const filteredRequests = requests
+    .filter(req => req.request_status === activeTab)
+    .sort((a, b) => {
+      // ONLY apply priority sorting for the 'To Pay' tab
+      if (activeTab === 'To Pay') {
+        // Check if payment_proof_url exists and is not null
+        const hasProofA = a.payment_proof_url ? 1 : 0;
+        const hasProofB = b.payment_proof_url ? 1 : 0;
+        
+        // We want hasProof to come FIRST, so we sort descending (b - a)
+        return hasProofB - hasProofA; 
+      }
+      // For other tabs, keep default order (usually by ID or created_at)
+      return 0; 
+    });
 
-  const filteredRequests = requests.filter(req => req.request_status === activeTab);
   const pendingRequests = requests.filter(req => req.request_status === 'Pending');
   const topayRequests = requests.filter(req => req.request_status === 'To Pay');
   const confirmedRequests = requests.filter(req => req.request_status === 'Confirmed');
@@ -159,15 +184,18 @@ const AdminDashboard = () => {
 
                         )}
 
-                        {req.request_status === 'To Pay' && (
+                        {/* --- TO PAY BUTTON LOGIC --- */}
+                        {req.request_status === 'To Pay' && req.payment_proof_url && (
                           <button 
-                            onClick={() => handleStatusUpdate(req.id, 'Confirmed')}                            
+                            onClick={() => handleOpenPayment(req)}
                             className="px-4 py-2 text-xs font-bold text-white bg-[#1a1f63] rounded-lg hover:bg-blue-900 transition-colors"
                           >
                             View Payment
                           </button>
                         )}
+                        {/* NOTE: If req.payment_proof_url is null, NO BUTTON is rendered here. */}
 
+                        {/* --- CONFIRMATION BUTTON --- */}
                         {req.request_status === 'Confirmation' && (
                           <button 
                             onClick={() => handleStatusUpdate(req.id, 'For Release')}
@@ -193,6 +221,13 @@ const AdminDashboard = () => {
           request={selectedRequest}
           onApprove={(req) => handleStatusUpdate(req.id, 'To Pay')}
           onReject={(req) => handleStatusUpdate(req.id, 'Rejected')}
+        />
+
+        <PaymentVerificationModal 
+          isOpen={isPaymentModalOpen}
+          onClose={handleClosePayment}
+          request={selectedRequest}
+          onConfirmPayment={(id, date) => handleStatusUpdate(id, 'Confirmed', date)} // Passes status AND date
         />
       </div>
     </div>
