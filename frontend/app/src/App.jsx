@@ -3,8 +3,8 @@ import { useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Login from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import UserDashboard from './components/UserDashboard';
-import AdminDashboard from './components/AdminDashboard';
+import UserDashboard from './pages/UserDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import TermsOfService from './pages/TermsOfService';
@@ -51,11 +51,7 @@ function App() {
     <AuthContext.Provider value={{ handleLogin, handleLogout, isAuthenticated, isAdmin, user }}>
       <ErrorBoundary>
         <div>
-          {isAuthenticated && (
-            <nav>
-              <button onClick={handleLogout}>Logout</button>
-            </nav>
-          )}
+
 
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
