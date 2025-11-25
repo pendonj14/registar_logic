@@ -4,13 +4,14 @@ import {
   Bell, 
   Clock, 
   CreditCard, 
-  CheckCircle, 
-  Trash2 
+  CheckCircle,  
+  MailCheck
 } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 import { Sidebar } from '../components/SideBar';
 import RequestModal from '../components/RequestModal';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
+import ReleaseModal from '../components/ReleaseModal';
 
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -19,6 +20,7 @@ const AdminDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
 
   useEffect(() => {
     fetchRequests();
@@ -53,6 +55,16 @@ const AdminDashboard = () => {
 
   const handleClosePayment = () => {
     setIsPaymentModalOpen(false);
+    setSelectedRequest(null);
+  };
+
+  const handleOpenRelease = (request) => {
+    setSelectedRequest(request);
+    setIsReleaseModalOpen(true);
+  };
+
+  const handleCloseRelease = () => {
+    setIsReleaseModalOpen(false);
     setSelectedRequest(null);
   };
 
@@ -100,7 +112,7 @@ const AdminDashboard = () => {
   const pendingRequests = requests.filter(req => req.request_status === 'Pending');
   const topayRequests = requests.filter(req => req.request_status === 'To Pay');
   const confirmedRequests = requests.filter(req => req.request_status === 'Confirmed');
-  const forreleaseRequests = requests.filter(req => req.request_status === 'For Release');
+  const forreleaseRequests = requests.filter(req => req.request_status === 'Released');
 
 
 
@@ -153,11 +165,12 @@ const AdminDashboard = () => {
                 <div key={req.id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-start gap-4 hover:shadow-md transition-shadow pr-10 ">
                   <div className={`p-3 rounded-xl ${
                       req.request_status === 'Pending' ? 'bg-yellow-50 text-yellow-600 mt-3' : 
-                      req.request_status === 'Rejected' ? 'bg-red-50 text-red-600 mt-3' :
+                      req.request_status === 'Released' ? 'bg-pink-50 text-pink-600 mt-3' :
                       req.request_status === 'To Pay' ? 'bg-blue-50 text-blue-600 mt-3' :
-                      'bg-green-50 text-green-600 mt-4 -mb-2'
+                      'bg-green-50 text-green-600 mt-3 -mb-2'
                   }`}>
                     {req.request_status === 'Pending' ? <Clock size={24} /> : 
+                    req.request_status === 'Released' ? <MailCheck size={24} /> :
                     req.request_status === 'To Pay' ? <CreditCard size={24} /> : 
                       <CheckCircle size={24}/>
                     }
@@ -171,7 +184,7 @@ const AdminDashboard = () => {
                           Requested by: <span className="text-gray-600 font-medium">{req.user_name || 'Student'}</span>
                         </p>
                         <p className="text-xs text-left text-gray-300 mt-1 -mb-1">
-                              {req.request_status === 'Confirmed' ? (
+                              {req.request_status === 'Confirmed' || req.request_status ==='Released'? (
                                   <>
                                       <span className=" text-gray-400">Student ID: <span className="text-gray-600 font-medium">{req.user}</span> <span className=" text-gray-400 ml-6">Claim Date: <span className = 'text-gray-600 font-medium'>{req.claim_date || 'To be scheduled'}</span></span></span>
           
@@ -213,7 +226,7 @@ const AdminDashboard = () => {
                         {/* --- CONFIRMATION BUTTON --- */}
                         {req.request_status === 'Confirmed' && (
                           <button 
-                            onClick={() => handleStatusUpdate(req.id, 'For Release')}
+                            onClick={() => handleOpenRelease(req)}
                             className="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                           >
                             Release
@@ -243,6 +256,13 @@ const AdminDashboard = () => {
           onClose={handleClosePayment}
           request={selectedRequest}
           onConfirmPayment={(id, date) => handleStatusUpdate(id, 'Confirmed', date)} // Passes status AND date
+        />
+
+        <ReleaseModal
+          isOpen={isReleaseModalOpen}
+          onClose={handleCloseRelease}
+          request={selectedRequest}
+          onConfirm={(req) => handleStatusUpdate(req.id, 'Released')}
         />
       </div>
     </div>

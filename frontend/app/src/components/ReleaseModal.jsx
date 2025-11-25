@@ -22,14 +22,14 @@ const ReleaseModal = ({ isOpen, onClose, onConfirm, request }) => {
 
         {/* Content */}
         <div className="mb-8">
-          <p className="text-gray-600 mb-2">
+          <p className="text-gray-600 mb-2 text-left">
             Are you sure you want to mark this document as <strong>Released</strong>?
           </p>
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-left">
             <p className="text-sm text-gray-500">Document:</p>
             <p className="font-semibold text-gray-800">{request?.request || 'Document'}</p>
             <p className="text-sm text-gray-500 mt-2">Student:</p>
-            <p className="font-semibold text-gray-800">{request?.user_name || 'Student'}</p>
+            <p className="font-semibold text-gray-800">{request?.user_name || 'Student'} ({request?.user})</p>
           </div>
           <p className="text-sm text-gray-400 mt-4">
             This action cannot be undone. The student will be notified that they have received the document.

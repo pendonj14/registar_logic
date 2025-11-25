@@ -94,10 +94,10 @@ export const Sidebar = ({ activeTab, onTabChange, pendingCount, topayRequests , 
             />
             <NavItem 
             icon={Send} 
-            label= "For Release"
+            label= "Released"
             badge={forreleaseRequests} 
-            active={activeTab === 'For Release'}
-            onClick={() => onTabChange('For Release')}
+            active={activeTab === 'Released'}
+            onClick={() => onTabChange('Released')}
             />
         </div>
         
