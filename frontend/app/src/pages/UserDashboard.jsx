@@ -18,6 +18,7 @@ function UserDashboard() {
     affiliation: 'Student', 
     request_purpose: ''
   });
+    console.log('Access Token:', localStorage.getItem('access_token'));
 
   const [clearanceImage, setClearanceImage] = useState(null);
 
