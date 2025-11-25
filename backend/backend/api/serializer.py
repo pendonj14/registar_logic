@@ -20,7 +20,6 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source='user.username')
     email = serializers.EmailField(source='user.email', read_only=True)
 
-
     class Meta:
         model = StudentRequest
         fields = '__all__'
