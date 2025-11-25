@@ -5,37 +5,29 @@ import {
   Clock, 
   CreditCard, 
   CheckCircle,  
-  MailCheck
+  MailCheck,
+  RefreshCw
 } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 import { Sidebar } from '../components/SideBar';
 import RequestModal from '../components/RequestModal';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
 import ReleaseModal from '../components/ReleaseModal';
+import useAutoFetchRequests from '../hooks/useAutoFetchRequests';
 
 const AdminDashboard = () => {
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Pending');
-  const [requests, setRequests] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
 
-  useEffect(() => {
-    fetchRequests();
-  }, []);
-
-  const fetchRequests = async () => {
-    try {
-      const response = await axiosInstance.get('/requests/');
-      setRequests(response.data);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching requests:', error);
-      setLoading(false);
-    }
-  };
+  const { 
+    requests, 
+    loading, 
+    setRequests, // We still need this for optimistic updates
+    refresh 
+  } = useAutoFetchRequests(1000);
 
   const handleOpenReview = (request) => {
     setSelectedRequest(request);
@@ -73,17 +65,16 @@ const AdminDashboard = () => {
     try {
       const payload = { request_status: newStatus };
       
-      // If claimDate is provided (from the Payment Modal), add it to the payload
       if (claimDate) {
         payload.claim_date = claimDate;
       }
 
       const response = await axiosInstance.patch(`/requests/${id}/`, payload);
       
-      // Update local state
+      // Update local state immediately (Optimistic Update)
+      // The background poller will eventually sync this, but we do it here for speed
       setRequests(prev => prev.map(r => r.id === id ? response.data : r));
       
-      // Close any open modals
       handleCloseModal();
       handleClosePayment();
       
@@ -96,16 +87,11 @@ const AdminDashboard = () => {
   const filteredRequests = requests
     .filter(req => req.request_status?.toLowerCase() === activeTab.toLowerCase())
     .sort((a, b) => {
-      // ONLY apply priority sorting for the 'To Pay' tab
       if (activeTab === 'To Pay') {
-        // Check if payment_proof_url exists and is not null
         const hasProofA = a.payment_proof_url ? 1 : 0;
         const hasProofB = b.payment_proof_url ? 1 : 0;
-        
-        // We want hasProof to come FIRST, so we sort descending (b - a)
         return hasProofB - hasProofA; 
       }
-      // For other tabs, keep default order (usually by ID or created_at)
       return 0; 
     });
 
@@ -138,6 +124,7 @@ const AdminDashboard = () => {
               <p className="text-gray-500 mt-1 text-left">Review and process student requests.</p>
             </div>
             <div className="flex items-center gap-4">
+               
               <div className="bg-white p-2 rounded-lg shadow-sm border border-gray-100 text-gray-400">
                 <Search size={20} />
               </div>
@@ -151,7 +138,15 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 gap-4">
             <div className="flex items-center justify-between p-4 bg-white rounded-xl shadow-sm border border-gray-100">
               <h3 className="font-bold text-gray-700">Recent {activeTab} Requests</h3>
-              <span className="bg-indigo-50 text-[#1a1f63] px-3 py-1 rounded-full text-xs font-bold">
+              <button 
+                onClick={() => refresh()} 
+                className="p-2 rounded-lg border hover:text-[#1a1f63] transition-colors ml-auto"
+                title="Refresh Data"
+              >
+                <RefreshCw size={19} />
+              </button>
+              <span className="bg-indigo-50 text-[#1a1f63] px-3 py-1 rounded-full text-xs font-bold ml-5">
+                
                 {filteredRequests.length} Total
               </span>
             </div>
@@ -229,7 +224,7 @@ const AdminDashboard = () => {
                             onClick={() => handleOpenRelease(req)}
                             className="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                           >
-                            Release
+                            Review and Release
                           </button>
                         )}
 

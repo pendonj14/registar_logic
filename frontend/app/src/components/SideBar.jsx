@@ -70,7 +70,7 @@ export const Sidebar = ({ activeTab, onTabChange, pendingCount, topayRequests , 
 
 
         {/* Navigation Links */}
-        <div className="flex-1 px-4 space-y-1 overflow-y-auto">
+        <div className="flex-1 px-4 space-y-1">
             <NavItem 
             icon={Clock} 
             label="Pending" 

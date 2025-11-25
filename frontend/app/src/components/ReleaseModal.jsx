@@ -29,7 +29,11 @@ const ReleaseModal = ({ isOpen, onClose, onConfirm, request }) => {
             <p className="text-sm text-gray-500">Document:</p>
             <p className="font-semibold text-gray-800">{request?.request || 'Document'}</p>
             <p className="text-sm text-gray-500 mt-2">Student:</p>
-            <p className="font-semibold text-gray-800">{request?.user_name || 'Student'} ({request?.user})</p>
+            <p className="font-semibold text-gray-800">{request?.user_name || 'Student'} ( {request?.user} )</p>
+            <p className="text-sm text-gray-500 mt-2">Email:</p>
+            <p className="font-semibold text-gray-800">{request?.email || 'Not Specified'}</p>
+            <p className="text-sm text-gray-500 mt-2">Phone Number:</p>
+            <p className="font-semibold text-gray-800">{request?.contact_number || 'Not Specified'}</p>
           </div>
           <p className="text-sm text-gray-400 mt-4">
             This action cannot be undone. The student will be notified that they have received the document.
