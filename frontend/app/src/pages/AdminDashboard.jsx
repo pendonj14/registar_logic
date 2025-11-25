@@ -155,7 +155,7 @@ const AdminDashboard = () => {
                       req.request_status === 'Pending' ? 'bg-yellow-50 text-yellow-600 mt-3' : 
                       req.request_status === 'Rejected' ? 'bg-red-50 text-red-600 mt-3' :
                       req.request_status === 'To Pay' ? 'bg-blue-50 text-blue-600 mt-3' :
-                      'bg-green-50 text-green-600 mt-3'
+                      'bg-green-50 text-green-600 mt-4 -mb-2'
                   }`}>
                     {req.request_status === 'Pending' ? <Clock size={24} /> : 
                     req.request_status === 'To Pay' ? <CreditCard size={24} /> : 
@@ -167,10 +167,23 @@ const AdminDashboard = () => {
                     <div className="flex justify-between items-start">
                       <div>
                         <h3 className="text-left font-bold text-gray-800 text-lg">{ req.request || 'Document Request'}</h3>
-                        <p className="text-sm text-gray-400 mt-1">
+                        <p className="text-sm text-gray-400 mt-1 text-left">
                           Requested by: <span className="text-gray-600 font-medium">{req.user_name || 'Student'}</span>
                         </p>
-                        <p className="text-xs text-left text-gray-300 mt-1">{req.created_at || 'Date unknown'}</p>
+                        <p className="text-xs text-left text-gray-300 mt-1 -mb-1">
+                              {req.request_status === 'Confirmed' ? (
+                                  <>
+                                      <span className=" text-gray-400">Student ID: <span className="text-gray-600 font-medium">{req.user}</span> <span className=" text-gray-400 ml-6">Claim Date: <span className = 'text-gray-600 font-medium'>{req.claim_date || 'To be scheduled'}</span></span></span>
+          
+                                      
+                                  </>
+                              ) : (
+                                  <>
+                                      <span className="font-semibold text-gray-400">Date Requested: </span>
+                                      {req.created_at || 'Date unknown'}
+                                  </>
+                              )}
+                        </p>
                       </div>
 
                       <div className="flex gap-2 mt-5">
@@ -203,7 +216,7 @@ const AdminDashboard = () => {
                             onClick={() => handleStatusUpdate(req.id, 'For Release')}
                             className="px-4 py-2 text-xs font-bold text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
                           >
-                            Ready to Release
+                            Release
                           </button>
                         )}
 

@@ -12,9 +12,9 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     birth_date = serializers.SerializerMethodField()
     eclearance_proof_url = serializers.SerializerMethodField()
     payment_proof_url = serializers.SerializerMethodField()
-    created_at = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S", read_only=True)
+    created_at = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     contact_number = serializers.CharField(source='user.profile.contact_number', read_only=True)
-    claim_date = serializers.DateTimeField()
+    claim_date = serializers.DateTimeField(format="%m-%d-%Y - %I:%M %p")
     # We define user explicitly as ReadOnly. 
     # This tells Django: "Don't expect the frontend to send the user ID."
     user = serializers.ReadOnlyField(source='user.username')
