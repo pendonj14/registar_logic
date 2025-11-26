@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // Fixed import spacing
+import { jwtDecode } from 'jwt-decode';
 import axiosInstance from '../utils/axios';
 import { AuthContext } from '../contexts/AuthContent';
 
@@ -9,6 +9,8 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+    // 1. Add isLoading state
+    const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
     const { handleLogin } = useContext(AuthContext);
@@ -16,6 +18,7 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setIsLoading(true); // Set loading to true immediately
         
         try {
             // 1. Send login request
@@ -41,21 +44,20 @@ const Login = () => {
             const decoded = jwtDecode(accessToken);
 
             // 6. GRANT PERMISSION: This updates the global AuthContext
-            // This sets isAuthenticated = true for EVERYONE (Admin & Student)
             handleLogin(accessToken, decoded);
 
             // 7. Redirect based on Role
-            // If is_staff is true, go to Admin. Otherwise, go to User Dashboard.
             if (decoded.is_staff) {
                 navigate('/admin', { replace: true });
             } else {
-                // This covers Students (Non-Admins)
                 navigate('/dashboard', { replace: true });
             }
 
         } catch (error) {
             console.error('Login failed:', error);
             setError(error.response?.data?.detail || 'Login failed. Please check your ID and Password.');
+        } finally {
+            setIsLoading(false); // Reset loading state regardless of success or failure
         }
     };
 
@@ -72,8 +74,8 @@ const Login = () => {
                         <p className="text-indigo-950 font-bold italic mt-30 md:mt-20 ">Your Documents. Your Time.</p>
                     </div>
 
-                    {/* Mobile-only Login form */}
-                    <div className="w-full max-w-md mt-4 md:hidden">
+                    {/* Mobile-only Login form (Visible only on small screens) */}
+                    <div className="w-full max-w-md mt-20 md:hidden relative z-50"> 
                         <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center hidden md:block">Login</h1>
 
                         <form onSubmit={handleSubmit} className="w-full space-y-6 mt-5">
@@ -86,6 +88,7 @@ const Login = () => {
                                     required
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Student ID"
+                                    disabled={isLoading} // Disable input while loading
                                 />
                             </div>
 
@@ -98,6 +101,7 @@ const Login = () => {
                                     required
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Password"
+                                    disabled={isLoading} // Disable input while loading
                                 />
                             </div>
 
@@ -109,6 +113,7 @@ const Login = () => {
                                         checked={rememberMe}
                                         onChange={() => setRememberMe(!rememberMe)}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                        disabled={isLoading} // Disable checkbox while loading
                                     />
                                     <label htmlFor="rememberMe-mobile" className="ml-2 block text-sm text-gray-700">
                                         Remember me
@@ -121,27 +126,33 @@ const Login = () => {
 
                             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                             
+                            {/* Mobile Login Button - Disabled when loading, shows loading text */}
                             <button 
                                 type="submit"
-                                className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50"
+                                disabled={isLoading} 
+                                className={`w-full py-3 px-4 rounded-lg transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                                    isLoading 
+                                        ? 'bg-indigo-700 cursor-not-allowed' 
+                                        : 'bg-indigo-950 hover:bg-indigo-900 focus:ring-indigo-950'
+                                } text-white`}
                             >
-                                Login
+                                {isLoading ? 'Logging in...' : 'Login'}
                             </button>
                         </form>
+
+                        {/* SIGN-UP LINK: Visible on mobile, placed below the Login button. (Replaced the old absolute div) */}
+                        <div className="mt-4 text-center">
+                            <p className="text-gray-600">
+                                Don't have an account? 
+                                <Link to="/register" className="text-indigo-950 font-semibold ml-2 hover:text-indigo-950">
+                                    Sign Up!
+                                </Link>
+                            </p>
+                        </div>
                     </div>
 
-                    {/* Sign-up link (mobile only) */}
-                    <div className="absolute top-8 right-8 md:hidden">
-                        <p className="text-gray-600">
-                            Don't have an account? 
-                            <Link to="/register" className="text-indigo-950 font-semibold ml-2 hover:text-indigo-950">
-                                Sign Up!
-                            </Link>
-                        </p>
-                    </div>
-                    
-                    {/* Tagline box at bottom */}
-                    <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-20 w-full max-w-md">
+                    {/* Tagline box at bottom - Hidden on mobile, block on desktop */}
+                    <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-20 w-full max-w-md hidden md:block">
                         <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit flex flex-col sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm sm:text-base text-center sm:text-left break-words">Simplifying Service, One Request at a Time</p>
                         </div>
@@ -152,12 +163,13 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* RIGHT HALF - Desktop Login Form */}
+            {/* RIGHT HALF - Desktop Login Form (Hidden on small screens) */}
             <div className="hidden md:flex w-full md:w-1/2 bg-white flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
                 <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
                 <div className="absolute -top-50 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
                 <div className="absolute -bottom-10 -right-50 w-[25rem] h-[25rem] bg-[radial-gradient(circle,rgba(255,237,195,0.6),transparent_70%)] rounded-full"></div>
 
+                {/* DESKTOP SIGN-UP LINK: Visible on desktop, placed top right */}
                 <div className="absolute top-8 right-8">
                     <p className="text-gray-600">
                         Don't have an account? 
@@ -180,6 +192,7 @@ const Login = () => {
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Student ID"
+                                disabled={isLoading} // Disable input while loading
                             />
                         </div>
 
@@ -192,6 +205,7 @@ const Login = () => {
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Password"
+                                disabled={isLoading} // Disable input while loading
                             />
                         </div>
 
@@ -203,6 +217,7 @@ const Login = () => {
                                     checked={rememberMe}
                                     onChange={() => setRememberMe(!rememberMe)}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                                    disabled={isLoading} // Disable checkbox while loading
                                 />
                                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                                     Remember me
@@ -215,11 +230,17 @@ const Login = () => {
 
                         {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                         
+                        {/* Desktop Login Button - Disabled when loading, shows loading text */}
                         <button 
                             type="submit"
-                            className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50"
+                            disabled={isLoading}
+                            className={`w-full py-3 px-4 rounded-lg transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                                isLoading 
+                                    ? 'bg-indigo-700 cursor-not-allowed' 
+                                    : 'bg-indigo-950 hover:bg-indigo-900 focus:ring-indigo-950'
+                            } text-white`}
                         >
-                            Login
+                            {isLoading ? 'Logging in...' : 'Login'}
                         </button>
                     </form>
                 </div>

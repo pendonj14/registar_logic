@@ -5,8 +5,9 @@ import { AuthContext } from '../contexts/AuthContent';
 const HomePage = () => {
   const { isAuthenticated, user } = useContext(AuthContext);
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
-
+  // Keep this as navOpen for consistency
+  const [navOpen, setNavOpen] = useState(false); 
+  
   useEffect(() => {
     if (isAuthenticated) {
       if (user?.is_staff) {
@@ -42,7 +43,7 @@ const HomePage = () => {
           bg-[radial-gradient(circle,rgba(255,237,195,1)_0%,rgba(255,237,195,0.8)_10%,rgba(255,237,195,0.5)_25%,rgba(255,237,195,0.25)_45%,rgba(255,237,195,0.1)_65%,transparent_100%)] rounded-full"></div>
       </div>
 
-      {/* Header */}
+      {/* HEADER (Same as PrivacyPolicy.jsx) */}
       <header className="relative z-10 w-full bg-white shadow">
         <div className="w-full px-4 md:px-6 py-4 flex justify-between items-center">
           <div className="h-9 flex items-center">
@@ -53,25 +54,45 @@ const HomePage = () => {
             />
           </div>
 
-          <nav className="hidden md:flex gap-6 text-lg text-gray-800 mr-20">
-            <Link to="/" className="hover:underline text-blue-600">Home</Link>
-            <Link to="/terms" className="hover:underline">Terms of Service</Link>
-            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
+          {/* Desktop Nav */}
+          <nav className="hidden md:flex gap-6 text-base font-medium text-indigo-950">
+            {/* Highlighted as active page */}
+            <Link to="/" className="text-indigo-950 border-b-2 border-indigo-950 pb-1">
+              Home
+            </Link>
+            <Link to="/terms" className="hover:text-indigo-700 transition duration-150">
+              Terms of Service
+            </Link>
+            <Link to="/privacy" className="hover:text-indigo-700 transition duration-150">
+              Privacy Policy
+            </Link>
           </nav>
 
+          {/* Mobile Menu Button */}
           <button
-            className="md:hidden text-gray-800 text-3xl"
-            onClick={() => setMenuOpen(!menuOpen)}
+            className="md:hidden p-2 text-indigo-950"
+            onClick={() => setNavOpen(!navOpen)} 
+            aria-label="Toggle navigation menu"
           >
-            ☰
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={navOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+            </svg>
           </button>
         </div>
 
-        {menuOpen && (
-          <div className="md:hidden bg-white shadow px-4 py-3 flex flex-col gap-3">
-            <Link to="/" onClick={() => setMenuOpen(false)}>Home</Link>
-            <Link to="/terms" onClick={() => setMenuOpen(false)}>Terms of Service</Link>
-            <Link to="/privacy" onClick={() => setMenuOpen(false)}>Privacy Policy</Link>
+        {/* Mobile Nav Dropdown - LOGIC COPIED FROM PRIVACYPOLICY.JSX */}
+        {navOpen && (
+          <div className="md:hidden bg-white shadow-lg border-t border-gray-200 px-4 py-3 space-y-2 absolute w-full z-10">
+            {/* All links use the immediate closing handler */}
+            <Link to="/" className="block text-indigo-950 hover:bg-gray-100 p-2 rounded bg-indigo-50 font-semibold" onClick={() => setNavOpen(false)}>
+              Home
+            </Link>
+            <Link to="/terms" className="block text-indigo-950 hover:bg-gray-100 p-2 rounded" onClick={() => setNavOpen(false)}>
+              Terms of Service
+            </Link>
+            <Link to="/privacy" className="block text-indigo-950 hover:bg-gray-100 p-2 rounded" onClick={() => setNavOpen(false)}>
+              Privacy Policy
+            </Link>
           </div>
         )}
       </header>

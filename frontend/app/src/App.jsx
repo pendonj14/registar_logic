@@ -8,6 +8,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import TermsOfService from './pages/TermsOfService';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
 // CHECK THIS IMPORT NAME: Usually it is AuthContext.js, not AuthContent
 import { AuthContext } from './contexts/AuthContent'; 
@@ -74,6 +75,7 @@ function App() {
             <Route path="/" element={<Navigate to="/home" replace />} />
             <Route path="/home" element={<HomePage />} />
             <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} /> 
 
             <Route
               path="/login"
