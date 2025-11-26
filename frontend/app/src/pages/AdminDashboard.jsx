@@ -16,13 +16,14 @@ import RequestModal from '../components/RequestModal';
 import PaymentVerificationModal from '../components/PaymentVerificationModal';
 import ReleaseModal from '../components/ReleaseModal';
 import useAutoFetchRequests from '../hooks/useAutoFetchRequests';
-
+import StatsModal from '../components/StatsModal'; // 1. IMPORT THIS
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('Pending');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isReleaseModalOpen, setIsReleaseModalOpen] = useState(false);
+  const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
 
   // 1. ADD SIDEBAR MOBILE STATE
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -101,6 +102,7 @@ const AdminDashboard = () => {
         // Pass the state to Sidebar
         isOpen={isSidebarOpen} 
         onClose={() => setIsSidebarOpen(false)}
+        onOpenStats={() => setIsStatsModalOpen(true)}
       />
 
       {/* Main Content Area */}
@@ -249,6 +251,11 @@ const AdminDashboard = () => {
       <RequestModal isOpen={isModalOpen} onClose={handleCloseModal} request={selectedRequest} onApprove={(req) => handleStatusUpdate(req.id, 'To Pay')} onReject={(req) => handleStatusUpdate(req.id, 'Rejected')} />
       <PaymentVerificationModal isOpen={isPaymentModalOpen} onClose={handleClosePayment} request={selectedRequest} onConfirmPayment={(id, date) => handleStatusUpdate(id, 'Confirmed', date)} />
       <ReleaseModal isOpen={isReleaseModalOpen} onClose={handleCloseRelease} request={selectedRequest} onConfirm={(req) => handleStatusUpdate(req.id, 'Released')} />
+      <StatsModal 
+        isOpen={isStatsModalOpen}
+        onClose={() => setIsStatsModalOpen(false)}
+        requests={requests}
+      />
     </div>
   );
 };

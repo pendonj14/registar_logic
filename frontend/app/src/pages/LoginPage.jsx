@@ -1,65 +1,61 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode'; // Fixed import spacing
 import axiosInstance from '../utils/axios';
 import { AuthContext } from '../contexts/AuthContent';
 
-
 const Login = () => {
-    // State hooks for form inputs and error handling
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
 
-    // React Router navigation hook
     const navigate = useNavigate();
-
-    // Access login handler from context (global auth state)
     const { handleLogin } = useContext(AuthContext);
 
-    // 🔑 Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         
         try {
-            // Send login request to Django backend
+            // 1. Send login request
             const response = await axiosInstance.post('/token/', {
                 username,
                 password
             });
             
- // Extract access token
             const accessToken = response.data.access;
             const refreshToken = response.data.refresh;
 
-            // FIX: Determine storage type based on Remember Me
+            // 2. Determine storage type
             const storage = rememberMe ? localStorage : sessionStorage;
 
-            // Save tokens to the chosen storage
+            // 3. Save tokens
             storage.setItem('access_token', accessToken);
             storage.setItem('refresh_token', refreshToken);
             
-            // Update axios default headers
+            // 4. Update axios headers immediately
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             
-            // Decode JWT 
+            // 5. Decode token to check roles
             const decoded = jwtDecode(accessToken);
 
-            // Pass decoded data to handleLogin to save decoding twice
+            // 6. GRANT PERMISSION: This updates the global AuthContext
+            // This sets isAuthenticated = true for EVERYONE (Admin & Student)
             handleLogin(accessToken, decoded);
 
-            // Redirect user depending on their role
+            // 7. Redirect based on Role
+            // If is_staff is true, go to Admin. Otherwise, go to User Dashboard.
             if (decoded.is_staff) {
-                navigate('/admin', { replace: true }); // Admin dashboard
+                navigate('/admin', { replace: true });
             } else {
-                navigate('/dashboard', { replace: true }); // Regular user homepage
+                // This covers Students (Non-Admins)
+                navigate('/dashboard', { replace: true });
             }
+
         } catch (error) {
-            // Handle failed login attempts
             console.error('Login failed:', error);
-            setError(error.response?.data?.detail || 'Login failed');
+            setError(error.response?.data?.detail || 'Login failed. Please check your ID and Password.');
         }
     };
 
@@ -81,51 +77,40 @@ const Login = () => {
                         <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center">Login</h1>
 
                         <form onSubmit={handleSubmit} className="w-full space-y-6">
-                            {/* Username input */}
                             <div className="space-y-2">
                                 <input
-                                    id="username"
+                                    id="username-mobile"
                                     type="text"
                                     value={username}
                                     onChange={(e) => setUsername(e.target.value)}
                                     required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
-                                    autofill:bg-white autofill:text-gray-900
-                                    [-webkit-text-fill-color:theme(colors.gray.900)]
-                                    [-webkit-box-shadow:0_0_0px_1000px_white_inset]
-                                    transition-all duration-500"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Student ID"
                                 />
                             </div>
 
-                            {/* Password input */}
                             <div className="space-y-2">
                                 <input
-                                    id="password"
+                                    id="password-mobile"
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
-                                    autofill:bg-white autofill:text-gray-900
-                                    [-webkit-text-fill-color:theme(colors.gray.900)]
-                                    [-webkit-box-shadow:0_0_0px_1000px_white_inset]
-                                    transition-all duration-500"
+                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Password"
                                 />
                             </div>
 
-                            {/* Remember me + Forgot password */}
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center">
                                     <input
-                                        id="rememberMe"
+                                        id="rememberMe-mobile"
                                         type="checkbox"
                                         checked={rememberMe}
                                         onChange={() => setRememberMe(!rememberMe)}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                                     />
-                                    <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                                    <label htmlFor="rememberMe-mobile" className="ml-2 block text-sm text-gray-700">
                                         Remember me
                                     </label>
                                 </div>
@@ -134,10 +119,8 @@ const Login = () => {
                                 </a>
                             </div>
 
-                            {/* Error message if login fails */}
                             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                             
-                            {/* Submit button */}
                             <button 
                                 type="submit"
                                 className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50"
@@ -170,13 +153,11 @@ const Login = () => {
             </div>
 
             {/* RIGHT HALF - Desktop Login Form */}
-            <div className="hidden md:flex w-full md:w-1/2 bg-white flex flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-                {/* Decorative background glows */}
+            <div className="hidden md:flex w-full md:w-1/2 bg-white flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
                 <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
                 <div className="absolute -top-50 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
                 <div className="absolute -bottom-10 -right-50 w-[25rem] h-[25rem] bg-[radial-gradient(circle,rgba(255,237,195,0.6),transparent_70%)] rounded-full"></div>
 
-                {/* Sign-up link (desktop only) */}
                 <div className="absolute top-8 right-8">
                     <p className="text-gray-600">
                         Don't have an account? 
@@ -186,12 +167,10 @@ const Login = () => {
                     </p>
                 </div>
 
-                {/* Desktop Login Form */}
                 <div className="w-full max-w-md">
                     <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center">Login</h1>
 
                     <form onSubmit={handleSubmit} className="w-full space-y-6">
-                        {/* Username */}
                         <div className="space-y-2">
                             <input
                                 id="username"
@@ -199,16 +178,11 @@ const Login = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
-                                autofill:bg-white autofill:text-gray-900
-                                [-webkit-text-fill-color:theme(colors.gray.900)]
-                                [-webkit-box-shadow:0_0_0px_1000px_white_inset]
-                                transition-all duration-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Student ID"
                             />
                         </div>
 
-                        {/* Password */}
                         <div className="space-y-2">
                             <input
                                 id="password"
@@ -216,16 +190,11 @@ const Login = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500
-                                autofill:bg-white autofill:text-gray-900
-                                [-webkit-text-fill-color:theme(colors.gray.900)]
-                                [-webkit-box-shadow:0_0_0px_1000px_white_inset]
-                                transition-all duration-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Password"
                             />
                         </div>
 
-                        {/* Remember me + Forgot password */}
                         <div className="flex items-center justify-between">
                             <div className="flex items-center">
                                 <input
@@ -244,10 +213,8 @@ const Login = () => {
                             </a>
                         </div>
 
-                        {/* Error message */}
                         {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                         
-                        {/* Submit */}
                         <button 
                             type="submit"
                             className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50"
@@ -258,7 +225,7 @@ const Login = () => {
                 </div>
             </div>
         </div>
-  );
+    );
 };
 
 export default Login;

@@ -1,216 +1,142 @@
-import { useState, useEffect, useContext } from 'react' // 1. Import useContext
+import { useState, useEffect } from 'react'
 import axiosInstance from '../utils/axios'
 import { jwtDecode } from "jwt-decode"; 
-import { AuthContext } from '../contexts/AuthContent'; // 2. Import AuthContext
+import { Menu } from 'lucide-react';
+import { UserSidebar } from '../components/UserSidebar';
+import RequestDocumentModal from '../components/RequestDocumentModal';
 
 function UserDashboard() {
-  // 3. Extract handleLogout from the context
-  const { handleLogout } = useContext(AuthContext);
+  // State
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
+  const [activePage, setActivePage] = useState('My Requests');
+  const [user, setUser] = useState({ username: '', program: '' });
+  
+  // Data State
+  const [myRequests, setMyRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const [username, setUsername] = useState('');
-
-  const [formData, setFormData] = useState({
-    request: '',            
-    year_level: '1st Year', 
-    is_graduate: false,     
-    last_attended: '',      
-    clearance_status: false,
-    affiliation: 'Student', 
-    request_purpose: ''
-  });
-    console.log('Access Token:', localStorage.getItem('access_token'));
-
-  const [clearanceImage, setClearanceImage] = useState(null);
-
-  useEffect(() => {
+  // 1. Fetch User Info & Requests on Load
+  const fetchUserData = async () => {
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     if (token) {
         try {
             const decoded = jwtDecode(token);
-            setUsername(decoded.username || decoded.user_id); 
+            setUser({ 
+                username: decoded.username || decoded.user_id,
+                program: decoded.program || 'Student' // Assuming token might have program, else default
+            });
         } catch (error) {
             console.error("Invalid token", error);
         }
     }
+    
+    // Fetch Requests
+    try {
+        setLoading(true);
+        const response = await axiosInstance.get('/requests/'); // Assuming this endpoint returns user's requests
+        setMyRequests(response.data);
+    } catch (error) {
+        console.error("Error fetching requests:", error);
+    } finally {
+        setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData();
   }, []);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    
-    setFormData(prev => {
-      const newData = { ...prev, [name]: type === 'checkbox' ? checked : value };
-      
-      if (name === 'is_graduate') {
-        newData.affiliation = checked ? 'Alumni' : 'Student';
-        if (!checked) newData.last_attended = ''; 
-      }
-      return newData;
-    });
-  };
+  // Filter requests for badges and view
+  const pendingRequests = myRequests.filter(req => req.request_status !== 'Released');
+  const completedRequests = myRequests.filter(req => req.request_status === 'Released');
 
-  const handleFileChange = (e) => {
-    setClearanceImage(e.target.files[0]);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const dataToSend = new FormData();
-    dataToSend.append('request', formData.request);
-    dataToSend.append('year_level', formData.year_level);
-    dataToSend.append('is_graduate', formData.is_graduate); 
-    dataToSend.append('clearance_status', formData.clearance_status);
-    dataToSend.append('affiliation', formData.affiliation);
-    dataToSend.append('request_purpose', formData.request_purpose);
-
-    if (formData.is_graduate) {
-        dataToSend.append('last_attended', formData.last_attended);
-    }
-
-    if (clearanceImage) {
-        dataToSend.append('eclearance_proof', clearanceImage);
-    }
-
-    try {
-      await axiosInstance.post('/requests/create/', dataToSend);
-      alert('Request submitted successfully!');
-      
-      setFormData({
-        request: '', year_level: '1st Year', is_graduate: false, 
-        last_attended: '', clearance_status: false, affiliation: 'Student', request_purpose: ''
-      });
-      setClearanceImage(null);
-
-    } catch (error) {
-      console.error('Error adding request:', error.response?.data || error.message);
-      alert('Error submitting request. Check console for details.');
-    }
-  };
+  const displayedRequests = activePage === 'My Requests' ? pendingRequests : completedRequests;
 
   return (
-    <div className="dashboard-container" style={{ padding: '20px' }}>
+    <div className="fixed inset-0 bg-[#f8f9fc] overflow-y-auto">
       
-      {/* HEADER SECTION WITH LOGOUT */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-            <h1>Submit a Request</h1>
-            {username && <p>Logged in as: <strong>{username}</strong></p>}
+      {/* SIDEBAR */}
+      <UserSidebar 
+        isOpen={isSidebarOpen}
+        onClose={() => setIsSidebarOpen(false)}
+        user={user}
+        activePage={activePage}
+        onPageChange={setActivePage}
+        onRequestClick={() => setIsRequestModalOpen(true)}
+        stats={{
+            pending: pendingRequests.length,
+            completed: completedRequests.length
+        }}
+      />
+
+      {/* REQUEST MODAL */}
+      <RequestDocumentModal 
+        isOpen={isRequestModalOpen} 
+        onClose={() => setIsRequestModalOpen(false)}
+        onSuccess={fetchUserData} // Refresh list after successful submission
+      />
+
+      {/* MAIN CONTENT */}
+      <main className="relative p-6 md:p-10 md:ml-72 transition-all duration-300 min-h-full">
+        
+        {/* HEADER */}
+        <header className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+                <button 
+                    onClick={() => setIsSidebarOpen(true)}
+                    className="p-2 bg-white rounded-lg shadow-sm border border-gray-100 text-gray-600 md:hidden hover:bg-gray-50"
+                >
+                    <Menu size={24} />
+                </button>
+                <div>
+                    <h1 className="text-2xl font-bold text-[#1a1f63]">{activePage}</h1>
+                    <p className="text-gray-500 text-sm">Manage your document requests.</p>
+                </div>
+            </div>
+        </header>
+
+        {/* CONTENT AREA (List of Requests) */}
+        <div className="space-y-4">
+            {loading ? (
+                <div className="text-center py-10 text-gray-400">Loading requests...</div>
+            ) : displayedRequests.length === 0 ? (
+                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-300">
+                    <p className="text-gray-400 mb-2">No requests found in {activePage}.</p>
+                    {activePage === 'My Requests' && (
+                        <button 
+                            onClick={() => setIsRequestModalOpen(true)}
+                            className="text-[#1a1f63] font-bold hover:underline"
+                        >
+                            Create a new request
+                        </button>
+                    )}
+                </div>
+            ) : (
+                displayedRequests.map((req) => (
+                    <div key={req.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center hover:shadow-md transition-shadow">
+                        <div>
+                            <h3 className="font-bold text-gray-800 text-lg">{req.request}</h3>
+                            <p className="text-sm text-gray-500 mt-1">Requested on: {req.created_at || 'Just now'}</p>
+                            {req.claim_date && (
+                                <p className="text-xs text-green-600 font-bold mt-2 bg-green-50 px-2 py-1 rounded-md inline-block">
+                                    Claim Date: {req.claim_date}
+                                </p>
+                            )}
+                        </div>
+                        <span className={`px-4 py-2 rounded-full text-xs font-bold capitalize ${
+                            req.request_status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                            req.request_status === 'Released' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-600'
+                        }`}>
+                            {req.request_status}
+                        </span>
+                    </div>
+                ))
+            )}
         </div>
-        
-        {/* 4. The Temporary Logout Button */}
-        <button 
-            onClick={handleLogout} 
-            style={{
-                backgroundColor: '#dc2626', // Red color
-                color: 'white',
-                padding: '8px 16px',
-                border: 'none',
-                borderRadius: '5px',
-                cursor: 'pointer',
-                fontWeight: 'bold'
-            }}
-        >
-            Logout
-        </button>
-      </div>
-      
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxWidth: '400px' }}>
-        
-        <label>
-            Document to Request:
-            <input 
-                type="text" 
-                name="request"
-                value={formData.request}
-                onChange={handleChange}
-                placeholder="e.g. Transcript of Records"
-                required
-                style={{ padding: '8px', marginTop: '5px' }}
-            />
-        </label>
 
-        <label>
-            Year Level:
-            <select name="year_level" value={formData.year_level} onChange={handleChange} style={{ padding: '8px', marginTop: '5px' }}>
-                <option value="1st Year">1st Year</option>
-                <option value="2nd Year">2nd Year</option>
-                <option value="3rd Year">3rd Year</option>
-                <option value="4th Year">4th Year</option>
-                <option value="5th Year">5th Year</option>
-                <option value="Graduate Studies">Graduate Studies</option>
-            </select>
-        </label>
-
-        <label style={{display: 'flex', alignItems: 'center'}}>
-            <input 
-                type="checkbox" 
-                name="is_graduate"
-                checked={formData.is_graduate}
-                onChange={handleChange}
-            />
-            &nbsp; Are you an Alumni?
-        </label>
-
-        {formData.is_graduate && (
-             <label>
-                Last S.Y. Attended:
-                <input 
-                    type="text" 
-                    name="last_attended"
-                    value={formData.last_attended}
-                    onChange={handleChange}
-                    placeholder="e.g. 2022-2023"
-                    required
-                    style={{ padding: '8px', marginTop: '5px' }}
-                />
-            </label>
-        )}
-
-        <label style={{display: 'flex', alignItems: 'center'}}>
-            <input 
-                type="checkbox" 
-                name="clearance_status"
-                checked={formData.clearance_status}
-                onChange={handleChange}
-            />
-            &nbsp; I am Cleared
-        </label>
-
-        <label>
-            Upload Clearance Proof (Image):
-            <input 
-                type="file" 
-                accept="image/*"
-                onChange={handleFileChange}
-                style={{ marginTop: '5px' }}
-            />
-        </label>
-
-        <label>
-             Purpose:
-             <textarea 
-                name="request_purpose"
-                value={formData.request_purpose}
-                onChange={handleChange}
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-             />
-        </label>
-
-        <button 
-            type="submit" 
-            style={{
-                marginTop: '10px', 
-                padding: '12px', 
-                backgroundColor: '#1a1f63', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '5px', 
-                cursor: 'pointer'
-            }}
-        >
-            Submit Request
-        </button>
-      </form>
+      </main>
     </div>
   )
 }

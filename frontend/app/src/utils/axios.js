@@ -1,23 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
 const axiosInstance = axios.create({
-    baseURL: 'http://127.0.0.1:8000/api/'
+  baseURL: "http://127.0.0.1:8000/api",
 });
 
 axiosInstance.interceptors.request.use(
-    config => {
-        // FIX: Check both storages
-        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-        if (token) {
-            config.headers['Authorization'] = `Bearer ${token}`;
-        }
-        return config;
-    },
-    error => {
-        return Promise.reject(error);
+  (config) => {
+    const token = localStorage.getItem("access_token") || sessionStorage.getItem("access_token");
+    if (token) {
+      config.headers["Authorization"] = `Bearer ${token}`;
     }
+    return config;
+  },
+  (error) => Promise.reject(error)
 );
-
 axiosInstance.interceptors.response.use(
     response => response,
     async error => {

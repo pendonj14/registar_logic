@@ -4,7 +4,8 @@ import {
   CheckCircle, 
   Send,        
   LogOut,
-  X // Import X for the close button
+  X,// Import X for the close button
+  BarChart2 // 1. IMPORT THIS
 } from 'lucide-react';
 import { NavItem } from './NavItem';
 import { useContext } from 'react';
@@ -19,7 +20,8 @@ export const Sidebar = ({
   confirmedRequests, 
   forreleaseRequests,
   isOpen, // New prop to control visibility on mobile
-  onClose // New prop to close sidebar
+  onClose,
+  onOpenStats 
 }) => {
 
   const { handleLogout } = useContext(AuthContext);
@@ -116,6 +118,17 @@ export const Sidebar = ({
             active={activeTab === 'Released'}
             onClick={() => { onTabChange('Released'); onClose(); }}
           />
+        </div>
+
+        {/* 3. NEW REPORTS BUTTON SECTION */}
+        <div className="px-4 pb-2">
+           <button 
+             onClick={() => { onOpenStats(); onClose(); }}
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-gray-600 hover:bg-indigo-50 hover:text-[#1a1f63] transition-all font-medium group"
+           >
+             <BarChart2 size={22} className="group-hover:text-[#1a1f63]" />
+             <span>Reports</span>
+           </button>
         </div>
         
         {/* Logout Button */}
