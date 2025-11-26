@@ -1,11 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from '../utils/axios';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 const Register = () => {
     // State for form data
     const [formData, setFormData] = useState({
-        username: '', // Student ID
+        username: '', 
         email: '',
         password: '',
         confirm_password: '',
@@ -13,28 +15,24 @@ const Register = () => {
         middle_name: '',
         last_name: '',
         extension_name: '',
-        birth_date: '',
+        birth_date: null,
         college_program: '',
         contact_number: ''
     });
 
-    // State for UI control
     const [step, setStep] = useState(1);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     
-    // Dropdown specific state
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
-    const dropdownRef = useRef(null); // Ref to handle clicking outside
+    const dropdownRef = useRef(null); 
     
-    // Visibility toggles
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     
     const navigate = useNavigate();
 
-    // Close dropdown if clicked outside
     useEffect(() => {
         function handleClickOutside(event) {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -47,7 +45,6 @@ const Register = () => {
         };
     }, [dropdownRef]);
 
-    // Program Data
     const programOptions = [
         {
             college: "College of Engineering & Architecture",
@@ -96,10 +93,8 @@ const Register = () => {
         }
     ];
 
-    // Filter logic for the search engine
     const filteredOptions = useMemo(() => {
         if (!searchTerm) return programOptions;
-        
         return programOptions.map(group => {
             const filteredPrograms = group.programs.filter(p => 
                 p.toLowerCase().includes(searchTerm.toLowerCase())
@@ -110,20 +105,13 @@ const Register = () => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-
         if (name === 'contact_number') {
             const numericValue = value.replace(/\D/g, '');
-            if (numericValue.length <= 11) {
-                setFormData(prev => ({ ...prev, [name]: numericValue }));
-            }
-        } 
-        else if (name === 'username') {
+            if (numericValue.length <= 11) setFormData(prev => ({ ...prev, [name]: numericValue }));
+        } else if (name === 'username') {
             const numericValue = value.replace(/\D/g, '');
-            if (numericValue.length <= 10) {
-                setFormData(prev => ({ ...prev, [name]: numericValue }));
-            }
-        }
-        else {
+            if (numericValue.length <= 10) setFormData(prev => ({ ...prev, [name]: numericValue }));
+        } else {
             setFormData(prev => ({ ...prev, [name]: value }));
         }
     };
@@ -131,56 +119,51 @@ const Register = () => {
     const handleProgramSelect = (program) => {
         setFormData(prev => ({ ...prev, college_program: program }));
         setIsDropdownOpen(false);
-        setSearchTerm(""); // Reset search after selection
+        setSearchTerm("");
     };
 
-    // Validate Step 1 before moving to Step 2
     const handleNext = () => {
         setError('');
-        
         if (!formData.username || !formData.email || !formData.password || !formData.confirm_password) {
             setError('Please fill out all fields in this section.');
             return;
         }
-
         if (formData.username.length !== 10) {
             setError('Student ID must be exactly 10 digits.');
             return;
         }
-
         const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
         if (!emailRegex.test(formData.email)) {
             setError('Please enter a valid email address.');
             return;
         }
-
         if (formData.password !== formData.confirm_password) {
             setError('Passwords do not match.');
             return;
         }
-
         setStep(2);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
-
         if (!formData.first_name || !formData.last_name || !formData.college_program) {
             setError('Please fill out First Name, Last Name, and Program.');
             return;
         }
-
         if (formData.contact_number && formData.contact_number.length !== 11) {
             setError('Contact number must be exactly 11 digits.');
             return;
         }
-
         setLoading(true);
         try {
             const payload = { ...formData };
             delete payload.confirm_password; 
-            if (!payload.birth_date) delete payload.birth_date;
+            if (payload.birth_date) {
+                payload.birth_date = payload.birth_date.toISOString().split('T')[0];
+            } else {
+                delete payload.birth_date;
+            }
 
             const res = await axios.post('/register/', payload);
             if (res.status === 201 || res.status === 200) {
@@ -206,10 +189,8 @@ const Register = () => {
         }
     };
 
-    // Shared styling
-    const inputClassName = "w-full px-3 py-2 sm:px-4 sm:py-3 text-sm sm:text-base border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 autofill:bg-white autofill:text-gray-900 [-webkit-text-fill-color:theme(colors.gray.900)] [-webkit-box-shadow:0_0_0px_1000px_white_inset] transition-all duration-500 bg-white";
+    const inputClassName = "w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 autofill:bg-white autofill:text-gray-900 [-webkit-text-fill-color:theme(colors.gray.900)] [-webkit-box-shadow:0_0_0px_1000px_white_inset] transition-all duration-500 bg-white appearance-none bg-clip-padding";
 
-    // Eye Icon
     const EyeIcon = ({ isVisible }) => (
         isVisible ? (
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -225,14 +206,16 @@ const Register = () => {
 
     return (
         <div className="flex h-screen w-screen fixed inset-0 flex flex-col md:flex-row overflow-hidden">
-            {/* LEFT SIDE */}
-            <div className="w-full md:w-1/2 bg-white flex flex-col justify-center relative overflow-hidden p-6 md:p-12 h-screen">
+            {/* LEFT SIDE - No Scroll */}
+            <div className="w-full md:w-1/2 bg-white flex flex-col justify-center relative h-screen overflow-hidden p-6 md:p-12">
+                
                 {/* Background Blobs */}
                 <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
                 <div className="absolute -bottom-10 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
                 <div className="absolute -top-50 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
 
-                <div className="absolute top-8 left-8">
+                {/* TOP-LEFT LINK: Only visible on Desktop (md:block) */}
+                <div className="absolute top-8 left-8 z-20 hidden md:block">
                     <p className="text-gray-600">
                         Have an account already?{' '}
                         <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
@@ -241,32 +224,28 @@ const Register = () => {
                     </p>
                 </div>
 
-                <div className="w-full max-w-md mx-auto relative z-10">
-                    <h1 className="text-3xl font-bold text-indigo-950 text-center mb-2">Register</h1>
-
-                    {/* Progress Pills */}
-                    <div className="flex justify-center gap-2 mb-6">
-                        <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 1 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
-                        <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 2 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
+                <div className="w-full max-w-md mx-auto relative z-10 flex flex-col justify-center h-full">
+                    <div className="mb-4 text-center">
+                        <h1 className="text-3xl font-bold text-indigo-950 mb-2">Register</h1>
+                        <div className="flex justify-center gap-2 mb-4">
+                            <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 1 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
+                            <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 2 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
+                        </div>
+                        <h2 className="text-xl font-semibold text-indigo-950">
+                            {step === 1 ? 'Account Details' : 'Profile Information'}
+                        </h2>
                     </div>
 
-                    <h2 className="text-xl font-semibold text-indigo-950 text-center mb-6">
-                        {step === 1 ? 'Account Details' : 'Profile Information'}
-                    </h2>
-
                     {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-3 text-sm">
+                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-2 text-sm">
                             {error}
                         </div>
                     )}
 
-                    <form 
-                        onSubmit={handleSubmit} 
-                        className="flex flex-col h-full max-h-[55vh] overflow-y-auto pr-2 custom-scrollbar"
-                    >
+                    <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
                         {/* PART 1: Account Information */}
                         {step === 1 && (
-                            <div className="space-y-4">
+                            <div className="space-y-3">
                                 <input
                                     type="text"
                                     name="username"
@@ -274,6 +253,8 @@ const Register = () => {
                                     value={formData.username}
                                     onChange={handleChange}
                                     required
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
                                 <input
@@ -283,6 +264,8 @@ const Register = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     required
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
                                 
@@ -294,6 +277,8 @@ const Register = () => {
                                         value={formData.password}
                                         onChange={handleChange}
                                         required
+                                        spellCheck="false"
+                                        autoComplete="new-password"
                                         className={`${inputClassName} pr-10`}
                                     />
                                     <button
@@ -313,6 +298,8 @@ const Register = () => {
                                         value={formData.confirm_password}
                                         onChange={handleChange}
                                         required
+                                        spellCheck="false"
+                                        autoComplete="new-password"
                                         className={`${inputClassName} pr-10`}
                                     />
                                     <button
@@ -327,7 +314,7 @@ const Register = () => {
                                 <button
                                     type="button"
                                     onClick={handleNext}
-                                    className="w-full bg-indigo-950 text-white py-3 px-4 rounded hover:bg-indigo-900 transition duration-300 font-semibold mt-4"
+                                    className="w-full bg-indigo-950 text-white py-2 px-4 rounded hover:bg-indigo-900 transition duration-300 font-semibold mt-2"
                                 >
                                     Next
                                 </button>
@@ -336,7 +323,7 @@ const Register = () => {
 
                         {/* PART 2: Profile Information */}
                         {step === 2 && (
-                            <div className="space-y-3">
+                            <div className="flex flex-col space-y-2">
                                 <input
                                     type="text"
                                     name="first_name"
@@ -344,6 +331,8 @@ const Register = () => {
                                     value={formData.first_name}
                                     onChange={handleChange}
                                     required
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
                                 <input
@@ -352,6 +341,8 @@ const Register = () => {
                                     placeholder="Middle Name"
                                     value={formData.middle_name}
                                     onChange={handleChange}
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
                                 <input
@@ -361,6 +352,8 @@ const Register = () => {
                                     value={formData.last_name}
                                     onChange={handleChange}
                                     required
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
                                 <input
@@ -369,22 +362,28 @@ const Register = () => {
                                     placeholder="Extension Name (e.g., Jr.)"
                                     value={formData.extension_name}
                                     onChange={handleChange}
+                                    spellCheck="false"
+                                    autoComplete="off"
                                     className={inputClassName}
                                 />
-                                <div className='flex flex-col'>
-                                    <label className="text-xs text-gray-500 ml-1 mb-1">Birth Date</label>
-                                    <input
-                                        type="date"
-                                        name="birth_date"
-                                        value={formData.birth_date}
-                                        onChange={handleChange}
+                                
+                                <div className='w-full'>
+                                    <DatePicker
+                                        selected={formData.birth_date}
+                                        onChange={(date) => setFormData({ ...formData, birth_date: date })}
+                                        placeholderText="Birth Date"
                                         className={inputClassName}
+                                        dateFormat="yyyy-MM-dd"
+                                        maxDate={new Date()}
+                                        showMonthDropdown
+                                        showYearDropdown
+                                        dropdownMode="select"
+                                        wrapperClassName="w-full"
                                     />
                                 </div>
 
-                                {/* Custom SEARCHABLE Dropdown */}
+                                {/* Program Dropdown */}
                                 <div className="relative w-full" ref={dropdownRef}>
-                                    {/* Trigger (Looks exactly like other inputs) */}
                                     <div 
                                         className={`${inputClassName} cursor-pointer flex items-center justify-between text-left`}
                                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -397,10 +396,9 @@ const Register = () => {
                                         </svg>
                                     </div>
 
-                                    {/* Dropdown List - Floating Overlay */}
+                                    {/* Dropdown List */}
                                     {isDropdownOpen && (
-                                        <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-300 rounded shadow-2xl z-50 max-h-60 flex flex-col overflow-hidden">
-                                            {/* Search Engine (Top) */}
+                                        <div className="absolute bottom-full mb-1 left-0 w-full bg-white border border-gray-300 rounded shadow-2xl z-50 max-h-48 flex flex-col overflow-hidden">
                                             <div className="p-2 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
                                                 <div className="relative">
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2 top-2.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -408,30 +406,30 @@ const Register = () => {
                                                     </svg>
                                                     <input
                                                         type="text"
-                                                        placeholder="Search program..."
-                                                        className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 bg-white placeholder-gray-500"
+                                                        placeholder="Search..."
+                                                        className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 bg-white placeholder-gray-500"
                                                         value={searchTerm}
                                                         onChange={(e) => setSearchTerm(e.target.value)}
                                                         autoFocus
+                                                        spellCheck="false"
                                                     />
                                                 </div>
                                             </div>
 
-                                            {/* Scrollable Options */}
                                             <div className="overflow-y-auto custom-scrollbar flex-1">
                                                 {filteredOptions.length === 0 ? (
-                                                    <div className="px-4 py-3 text-sm text-gray-500 text-center">No programs found</div>
+                                                    <div className="px-4 py-3 text-xs text-gray-500 text-center">No programs found</div>
                                                 ) : (
                                                     filteredOptions.map((college, idx) => (
                                                         <div key={idx}>
-                                                            <div className="px-3 py-2 bg-gray-100 text-xs font-bold text-indigo-900 uppercase tracking-wide sticky top-0">
+                                                            <div className="px-3 py-1.5 bg-gray-100 text-[10px] font-bold text-indigo-900 uppercase tracking-wide sticky top-0">
                                                                 {college.college}
                                                             </div>
                                                             {college.programs.map((prog, pIdx) => (
                                                                 <div 
                                                                     key={pIdx}
                                                                     onClick={() => handleProgramSelect(prog)}
-                                                                    className={`px-4 py-2 text-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-900 transition-colors border-b border-gray-50 last:border-b-0 ${formData.college_program === prog ? 'bg-indigo-50 text-indigo-900 font-medium' : 'text-gray-700'}`}
+                                                                    className={`px-4 py-2 text-xs cursor-pointer hover:bg-indigo-50 hover:text-indigo-900 transition-colors border-b border-gray-50 last:border-b-0 ${formData.college_program === prog ? 'bg-indigo-50 text-indigo-900 font-medium' : 'text-gray-700'}`}
                                                                 >
                                                                     {prog}
                                                                 </div>
@@ -451,26 +449,37 @@ const Register = () => {
                                     value={formData.contact_number}
                                     onChange={handleChange}
                                     className={inputClassName}
+                                    autoComplete="off"
                                 />
 
-                                <div className="flex justify-between gap-4 mt-6">
+                                <div className="flex justify-between gap-3 mt-2">
                                     <button
                                         type="button"
                                         onClick={() => setStep(1)}
-                                        className="w-1/3 bg-gray-200 text-gray-700 py-3 px-3 rounded hover:bg-gray-300 transition duration-300 font-semibold"
+                                        className="w-1/3 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 transition duration-300 font-semibold text-sm"
                                     >
                                         Back
                                     </button>
                                     <button
                                         type="submit"
                                         disabled={loading}
-                                        className="w-2/3 bg-indigo-950 text-white py-3 px-3 rounded hover:bg-indigo-900 transition duration-300 font-semibold"
+                                        className="w-2/3 bg-indigo-950 text-white py-2 px-3 rounded hover:bg-indigo-900 transition duration-300 font-semibold text-sm"
                                     >
                                         {loading ? 'Registering...' : 'Register'}
                                     </button>
                                 </div>
                             </div>
                         )}
+
+                        {/* MOBILE ONLY: Login Link under the buttons */}
+                        <div className="mt-4 text-center md:hidden">
+                            <p className="text-gray-600 text-sm">
+                                Have an account already?{' '}
+                                <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
+                                    Login!
+                                </Link>
+                            </p>
+                        </div>
                     </form>
                 </div>
             </div>
@@ -481,7 +490,7 @@ const Register = () => {
                 <img src="/logo.png" alt="logo" className="mx-auto h-[22rem] w-auto fixed inset-y-[3.75rem] -translate-y-6 md:translate-y-6" />
                 <p className="text-indigo-950 font-bold italic mt-20">Your Documents. Your Time.</p>
                 <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-12 w-full max-w-md">
-                    <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit">
+                    <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit mx-auto">
                         <p className="text-sm sm:text-base text-center sm:text-left break-words">
                             Create Your Account to Get Started
                         </p>
