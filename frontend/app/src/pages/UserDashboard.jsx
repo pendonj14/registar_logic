@@ -10,34 +10,55 @@ function UserDashboard() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
   const [activePage, setActivePage] = useState('My Requests');
-  const [user, setUser] = useState({ username: '', program: '' });
-  
-  // Data State
+  const [user, setUser] = useState({ 
+      full_name: '', 
+      program: '', 
+      student_id: '' 
+  });  
   const [myRequests, setMyRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  
 
   // 1. Fetch User Info & Requests on Load
   const fetchUserData = async () => {
-    const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
-    if (token) {
-        try {
-            const decoded = jwtDecode(token);
-            setUser({ 
-                username: decoded.username || decoded.user_id,
-                program: decoded.program || 'Student' // Assuming token might have program, else default
-            });
-        } catch (error) {
-            console.error("Invalid token", error);
-        }
-    }
-    
-    // Fetch Requests
     try {
         setLoading(true);
-        const response = await axiosInstance.get('requests/'); // Assuming this endpoint returns user's requests
-        setMyRequests(response.data);
+
+        // We use Promise.all to fetch both endpoints at the same time
+        // This is faster than waiting for one, then the other.
+        const [profileRes, requestsRes] = await Promise.all([
+            axiosInstance.get('user/profile/'), // The new view we created
+            axiosInstance.get('requests/')      // Your existing requests view
+        ]);
+
+        // A. Set User Profile Data
+        setUser({
+            full_name: profileRes.data.full_name,  // e.g., "Juan Dela Cruz"
+            program: profileRes.data.program,      // e.g., "BS Information Technology"
+            student_id: profileRes.data.student_id // e.g., "2021-00123"
+        });
+
+        // B. Set Request Data
+        setMyRequests(requestsRes.data);
+
     } catch (error) {
-        console.error("Error fetching requests:", error);
+        console.error("Error fetching data:", error);
+
+        // FALLBACK: If the 'user/profile/' endpoint fails (e.g., backend error),
+        // we decode the JWT token so the sidebar isn't completely empty.
+        const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
+        if (token) {
+            try {
+                const decoded = jwtDecode(token);
+                setUser({
+                    full_name: decoded.username || 'Student', // Fallback to displaying ID
+                    program: 'Student',
+                    student_id: decoded.user_id || decoded.username
+                });
+            } catch (jwtError) {
+                console.error("Token decode failed:", jwtError);
+            }
+        }
     } finally {
         setLoading(false);
     }
