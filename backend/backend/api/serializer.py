@@ -19,6 +19,7 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     # This tells Django: "Don't expect the frontend to send the user ID."
     user = serializers.ReadOnlyField(source='user.username')
     email = serializers.EmailField(source='user.email', read_only=True)
+    college_program = serializers.CharField(source='user.profile.college_program')
 
     class Meta:
         model = StudentRequest

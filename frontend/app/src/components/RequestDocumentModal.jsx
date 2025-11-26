@@ -152,18 +152,6 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess}) => {
                 </select>
               </div>
 
-                            <div className="space-y-1">
-                <label className="text-sm font-semibold text-gray-700">Course</label>
-                <input
-                  name="year_level"
-                  value={formData.year_level}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] text-black"
-                >
-
-                </input>
-              </div>
-
               {formData.is_graduate && (
                 <div className="space-y-1">
                   <label className="text-sm font-semibold text-gray-700">Last S.Y. Attended</label>
