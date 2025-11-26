@@ -33,7 +33,7 @@ def get_requests(request):
     return Response(serializer.data)
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def create_request(request): 
     serializer = StudentRequestSerializer(
     data=request.data,

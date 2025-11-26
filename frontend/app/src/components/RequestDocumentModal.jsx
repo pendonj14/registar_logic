@@ -46,55 +46,67 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess}) => {
     }
   };
 
-  const handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const token =
-      localStorage.getItem("access_token") ||
-      sessionStorage.getItem("access_token");
-
     const dataToSend = new FormData();
-    Object.keys(formData).forEach((key) => {
-      dataToSend.append(key, formData[key]);
-    });
 
+    // Match Django model EXACTLY
+    dataToSend.append("request", formData.request);
+    dataToSend.append("year_level", formData.year_level);
+    dataToSend.append("affiliation", formData.affiliation);
+    dataToSend.append("clearance_status", formData.clearance_status ? "true" : "false");
+    dataToSend.append("is_graduate", formData.is_graduate ? "true" : "false");
+    dataToSend.append("request_purpose", formData.request_purpose);
+
+    // Alumni must send last_attended
+    if (formData.is_graduate) {
+        dataToSend.append("last_attended", formData.last_attended);
+    } else {
+        dataToSend.append("last_attended", "");
+    }
+
+    // File upload (optional)
     if (clearanceImage) {
-      dataToSend.append("eclearance_proof", clearanceImage);
+        dataToSend.append("eclearance_proof", clearanceImage);
     }
 
     try {
-      await axiosInstance.post("/requests/create/", dataToSend, {
+        await axiosInstance.post("/requests/create/", dataToSend, {
         headers: {
-          "Authorization": `Bearer ${token}`,
-          "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${
+            localStorage.getItem("access_token") ||
+            sessionStorage.getItem("access_token")
+            }`,
+            "Content-Type": "multipart/form-data",
         },
-      });
+        });
 
-      // Reset values
-      setFormData({
-        request: '',
-        year_level: '1st Year',
+        // RESET STATE
+        setFormData({
+        request: "",
+        year_level: "1st Year",
         is_graduate: false,
-        last_attended: '',
+        last_attended: "",
         clearance_status: false,
-        affiliation: 'Student',
-        request_purpose: ''
-      });
+        affiliation: "Student",
+        request_purpose: "",
+        });
 
-      setClearanceImage(null);
-      setPreviewUrl(null);
+        setClearanceImage(null);
+        setPreviewUrl(null);
 
-      onSuccess();
-      onClose();
-      alert("Request submitted successfully!");
+        onSuccess();
+        onClose();
+        alert("Request submitted successfully!");
     } catch (error) {
-      console.error("Error adding request:", error);
-      alert("Error submitting request.");
+        console.error("Submit Error:", error);
+        alert("Error submitting request.");
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
+    };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">

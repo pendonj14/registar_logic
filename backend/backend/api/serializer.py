@@ -14,18 +14,31 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     payment_proof_url = serializers.SerializerMethodField()
     created_at = serializers.DateTimeField(format="%Y-%m-%d", read_only=True)
     contact_number = serializers.CharField(source='user.profile.contact_number', read_only=True)
-    claim_date = serializers.DateTimeField(format="%m-%d-%Y - %I:%M %p")
+    claim_date = serializers.DateTimeField(
+        format="%m-%d-%Y - %I:%M %p",
+        required=False,
+        allow_null=True
+    )
     # We define user explicitly as ReadOnly. 
     # This tells Django: "Don't expect the frontend to send the user ID."
     user = serializers.ReadOnlyField(source='user.username')
     email = serializers.EmailField(source='user.email', read_only=True)
-    college_program = serializers.CharField(source='user.profile.college_program')
+    college_program = serializers.CharField(
+    source='user.profile.college_program',
+    required=False,
+    allow_null=True
+    )
+
 
     class Meta:
         model = StudentRequest
         fields = '__all__'
         # These fields are auto-generated or admin-controlled, so frontend cannot touch them
         read_only_fields = ['created_at', 'user']
+        extra_kwargs = {
+            'payment_proof': {'required': False, 'allow_null': True},
+            'eclearance_proof': {'required': False, 'allow_null': True},
+        }
         
     def get_user_name(self, obj):
         # Added safety: check if profile exists to prevent crash
