@@ -44,6 +44,7 @@ class StudentRequest(models.Model):
     request_purpose = models.CharField(max_length=250, default="Not specified",)  # Providing a default value for existing records
     request_status = models.CharField(max_length=50, default="Pending")  # New field with default value
     claim_date = models.DateTimeField(blank=True, null=True)
+    cost = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, default=None)
 
     def __str__(self):
         return f"{self.user.profile.first_name} {self.user.profile.last_name} - {self.request}"

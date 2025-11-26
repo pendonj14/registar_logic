@@ -28,6 +28,7 @@ class StudentRequestSerializer(serializers.ModelSerializer):
     required=False,
     allow_null=True
     )
+    cost = serializers.DecimalField(max_digits=10, decimal_places=2, required=False, allow_null=True)
 
 
     class Meta:
