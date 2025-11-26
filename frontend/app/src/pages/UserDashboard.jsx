@@ -34,7 +34,7 @@ function UserDashboard() {
     // Fetch Requests
     try {
         setLoading(true);
-        const response = await axiosInstance.get('/requests/'); // Assuming this endpoint returns user's requests
+        const response = await axiosInstance.get('requests/'); // Assuming this endpoint returns user's requests
         setMyRequests(response.data);
     } catch (error) {
         console.error("Error fetching requests:", error);

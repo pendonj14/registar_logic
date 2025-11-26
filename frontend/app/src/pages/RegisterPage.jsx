@@ -73,7 +73,7 @@ const Register = () => {
     };
 
     return (
-        <div style={{ maxWidth: 700, margin: '24px auto', padding: 20 }}>
+        <div className='bg-amber-400' style={{ maxWidth: 700, margin: '24px auto', padding: 20 }}>
             <h2>Register</h2>
             {error && <div style={{ color: 'red', marginBottom: 12 }}>{error}</div>}
             <form onSubmit={handleSubmit}>

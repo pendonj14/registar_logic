@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, UploadCloud } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 
-const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
+const RequestDocumentModal = ({ isOpen, onClose, onSuccess}) => {
   if (!isOpen) return null;
 
   const [formData, setFormData] = useState({
@@ -120,7 +120,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
 
             {/* Request */}
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Document Name</label>
+              <label className="text-sm font-semibold text-g-700">Document Name</label>
               <input
                 type="text"
                 name="request"
@@ -128,7 +128,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                 onChange={handleChange}
                 placeholder="e.g. Transcript of Records"
                 required
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] focus:border-transparent outline-none transition-all"
+                className="w-full px-4 py-2.5 text-black bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] focus:border-transparent outline-none transition-all"
               />
             </div>
 
@@ -141,7 +141,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                   name="year_level"
                   value={formData.year_level}
                   onChange={handleChange}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63]"
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] text-black"
                 >
                   <option value="1st Year">1st Year</option>
                   <option value="2nd Year">2nd Year</option>
@@ -150,6 +150,18 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                   <option value="5th Year">5th Year</option>
                   <option value="Graduate Studies">Graduate Studies</option>
                 </select>
+              </div>
+
+                            <div className="space-y-1">
+                <label className="text-sm font-semibold text-gray-700">Course</label>
+                <input
+                  name="year_level"
+                  value={formData.year_level}
+                  onChange={handleChange}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] text-black"
+                >
+
+                </input>
               </div>
 
               {formData.is_graduate && (
@@ -162,7 +174,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                     onChange={handleChange}
                     placeholder="e.g. 2022-2023"
                     required
-                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63]"
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] text-black"
                   />
                 </div>
               )}
@@ -224,7 +236,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                 value={formData.request_purpose}
                 onChange={handleChange}
                 rows="2"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] outline-none resize-none"
+                className="w-full text-black px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] outline-none resize-none"
               />
             </div>
 

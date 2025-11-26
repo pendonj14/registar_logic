@@ -73,7 +73,7 @@ export const UserSidebar = ({
                             {user?.username || 'Student Name'}
                         </span>
                         <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                            {user?.program || 'Student Account'}
+                            {user?.course || 'Student Account'}
                         </span>
                     </div>
                 </div>

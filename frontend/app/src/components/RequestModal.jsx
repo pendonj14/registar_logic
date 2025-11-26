@@ -68,14 +68,14 @@ const RequestModal = ({ isOpen, onClose, request, onApprove, onReject }) => {
               <CircleUser size={20} /> Student Profile
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 ">
-              <InfoRow icon={User} label="Full Name"  value={request.user_name} />
-              <InfoRow icon={Mail} label="Email Address" value={request.email} />
-              <InfoRow icon={Phone} label="Contact Number" value={request.contact_number} />
-              <InfoRow icon={Calendar} label="Birth Date" value={formatDate(request.birth_date)} />
-              <InfoRow icon={School} label="Affiliation" value={request.affiliation} />
-              <InfoRow icon={School} label="Year Level" value={request.year_level} />
-              <InfoRow icon={School} label="Last Attended" value={request.last_attended} />
-              <InfoRow icon={School} label="Is Graduate?" value={request.is_graduate ? "Yes" : "No"} />
+                <InfoRow icon={User} label="Full Name"  value={request.user_name} />
+                <InfoRow icon={Mail} label="Email Address" value={request.email} />
+                <InfoRow icon={School} label="Program" value={request.college_program} />
+                <InfoRow icon={Phone} label="Contact Number" value={request.contact_number} />
+                <InfoRow icon={Calendar} label="Birth Date" value={formatDate(request.birth_date)} />
+                <InfoRow icon={School} label="Affiliation" value={request.affiliation} />
+                <InfoRow icon={School} label="Year Level" value={request.year_level} />
+                <InfoRow icon={School} label="Last Attended" value={request.last_attended} />
             </div>
           </div>
 

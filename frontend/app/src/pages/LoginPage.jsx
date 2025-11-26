@@ -67,16 +67,16 @@ const Login = () => {
 
                     {/* Welcome text + logo */}
                     <div className="flex flex-col items-center mt-30 md:mt-40">
-                        <h2 className="text-4xl font-bold text-indigo-950 mt-3">Welcome Back!</h2>
+                        <h2 className="text-4xl font-bold text-indigo-950 mt-3 hidden md:block">Welcome Back!</h2>
                         <img src="/logo.png" alt="logo" className="mx-auto h-90 w-auto fixed inset-y-15 -translate-y-6 md:translate-y-6" />
-                        <p className="text-indigo-950 font-bold italic mt-20">Your Documents. Your Time.</p>
+                        <p className="text-indigo-950 font-bold italic mt-30 md:mt-20 ">Your Documents. Your Time.</p>
                     </div>
 
                     {/* Mobile-only Login form */}
                     <div className="w-full max-w-md mt-4 md:hidden">
-                        <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center">Login</h1>
+                        <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center hidden md:block">Login</h1>
 
-                        <form onSubmit={handleSubmit} className="w-full space-y-6">
+                        <form onSubmit={handleSubmit} className="w-full space-y-6 mt-5">
                             <div className="space-y-2">
                                 <input
                                     id="username-mobile"
