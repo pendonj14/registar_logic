@@ -3,7 +3,7 @@ from .models import StudentRequest, UserProfile
 
 @admin.register(StudentRequest)
 class StudentRequestAdmin(admin.ModelAdmin):
-    list_display = ('studentid','user_name','contact_number', 'email','birth_date', 'year_level', 'affiliation', 'request', 
+    list_display = ('studentid','user_name','contact_number', 'email','birth_date', 'college_program','year_level', 'affiliation', 'request', 
                    'clearance_status', 'is_graduate', 'last_attended', 'created_at', 'request_purpose', 'request_status', 'eclearance_proof', 'payment_proof', 'claim_date')
     search_fields = ('user__profile__first_name', 'user__profile__last_name', 'request', 
                     'year_level', 'request_purpose')
@@ -20,6 +20,8 @@ class StudentRequestAdmin(admin.ModelAdmin):
         return obj.user.profile.contact_number
     def email(self, obj):
         return obj.user.email
+    def college_program(self, obj):
+        return obj.user.profile.college_program
 
 
 @admin.register(UserProfile)

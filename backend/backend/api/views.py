@@ -12,12 +12,13 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction #
+from rest_framework.views import APIView
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated]) # Secure the view
+@permission_classes([IsAuthenticated])
 def get_requests(request):
     # Logic: If user is staff/admin, show all. If student, show only theirs.
     if request.user.is_staff:
@@ -33,6 +34,7 @@ def get_requests(request):
     return Response(serializer.data)
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def create_request(request): 
     serializer = StudentRequestSerializer(
     data=request.data,
@@ -79,6 +81,7 @@ def manage_request(request, pk):
     
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def register_user(request):
     data = request.data
     try:
@@ -164,7 +167,30 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['is_staff'] = user.is_staff
+        token['program'] = user.profile.college_program
+        token['name'] = str(user.profile)
         return token
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+class CurrentUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Check if profile exists
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            return Response({
+                # This uses the same logic as your serializer (str representation)
+                "full_name": str(profile), 
+                "program": profile.college_program,
+                "student_id": user.username,
+                "email": user.email
+            })
+        return Response({
+            "full_name": "Student",
+            "program": "No Program",
+            "student_id": user.username
+        })

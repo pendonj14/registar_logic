@@ -58,22 +58,26 @@ export const UserSidebar = ({
         </div>
 
         {/* 2. PROFILE SECTION */}
-        <div className="px-6 mb-2">
+       <div className="px-6 mb-2">
             <div className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 overflow-hidden flex items-center justify-center">
+                        {/* Use student_id for the avatar seed so it stays consistent */}
                         <img 
-                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'User'}`}
+                            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.student_id || 'User'}`}
                             alt="Profile" 
                             className="w-full h-full object-cover"
                         />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-sm font-bold text-gray-900 leading-tight truncate w-32">
-                            {user?.username || 'Student Name'}
+                        {/* DISPLAY FULL NAME */}
+                        <span className="text-sm font-bold text-gray-900 leading-tight truncate w-32" title={user?.full_name}>
+                            {user?.full_name || 'Loading...'}
                         </span>
-                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
-                            {user?.course || 'Student Account'}
+                        
+                        {/* DISPLAY PROGRAM */}
+                        <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide truncate w-32">
+                            {user?.program || 'Student'}
                         </span>
                     </div>
                 </div>
