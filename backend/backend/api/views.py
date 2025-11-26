@@ -14,6 +14,7 @@ from django.db import IntegrityError
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction #
+from rest_framework.views import APIView
 
 
 @api_view(['GET'])
@@ -166,7 +167,30 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['is_staff'] = user.is_staff
+        token['program'] = user.profile.college_program
+        token['name'] = str(user.profile)
         return token
 
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
+
+class CurrentUserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        # Check if profile exists
+        if hasattr(user, 'profile'):
+            profile = user.profile
+            return Response({
+                # This uses the same logic as your serializer (str representation)
+                "full_name": str(profile), 
+                "program": profile.college_program,
+                "student_id": user.username,
+                "email": user.email
+            })
+        return Response({
+            "full_name": "Student",
+            "program": "No Program",
+            "student_id": user.username
+        })

@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import get_requests, create_request, manage_request, register_user, MyTokenObtainPairView
+from .views import get_requests, create_request, manage_request, register_user, MyTokenObtainPairView, CurrentUserProfileView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from django.conf import settings
 from django.conf.urls.static import static
@@ -12,6 +12,7 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('register/', register_user, name='register'),
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('user/profile/', CurrentUserProfileView.as_view(), name='current-user-profile'),
 ]
 
 if settings.DEBUG:
