@@ -3,7 +3,16 @@ import React from 'react';
 import { X, CheckCircle } from 'lucide-react';
 
 const ReleaseModal = ({ isOpen, onClose, onConfirm, request }) => {
-  if (!isOpen) return null;
+  // FIXED: Added !request check. 
+  // If the parent clears the selected request, this ensures the modal 
+  // closes immediately instead of showing empty/blank data.
+  if (!isOpen || !request) return null;
+
+  // FIXED: New handler to ensure both actions happen
+  const handleConfirmClick = () => {
+    onConfirm(request); // 1. Execute the release logic
+    onClose();          // 2. Immediately close the modal
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -27,13 +36,16 @@ const ReleaseModal = ({ isOpen, onClose, onConfirm, request }) => {
           </p>
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 text-left">
             <p className="text-sm text-gray-500">Document:</p>
-            <p className="font-semibold text-gray-800">{request?.request || 'Document'}</p>
+            <p className="font-semibold text-gray-800">{request.request}</p>
+            
             <p className="text-sm text-gray-500 mt-2">Student:</p>
-            <p className="font-semibold text-gray-800">{request?.user_name || 'Student'} ( {request?.user} )</p>
+            <p className="font-semibold text-gray-800">{request.user_name} ( {request.user} )</p>
+            
             <p className="text-sm text-gray-500 mt-2">Email:</p>
-            <p className="font-semibold text-gray-800">{request?.email || 'Not Specified'}</p>
+            <p className="font-semibold text-gray-800">{request.email || 'Not Specified'}</p>
+            
             <p className="text-sm text-gray-500 mt-2">Phone Number:</p>
-            <p className="font-semibold text-gray-800">{request?.contact_number || 'Not Specified'}</p>
+            <p className="font-semibold text-gray-800">{request.contact_number || 'Not Specified'}</p>
           </div>
           <p className="text-sm text-gray-400 mt-4">
             This action cannot be undone. The student will be notified that they have received the document.
@@ -49,7 +61,7 @@ const ReleaseModal = ({ isOpen, onClose, onConfirm, request }) => {
             Cancel
           </button>
           <button 
-            onClick={() => onConfirm(request)}
+            onClick={handleConfirmClick}
             className="px-5 py-2.5 text-sm font-bold text-white bg-green-600 hover:bg-green-700 rounded-xl shadow-lg shadow-green-200 transition-colors"
           >
             Confirm & Release
