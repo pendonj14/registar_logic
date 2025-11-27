@@ -12,6 +12,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import './App.css';
 // CHECK THIS IMPORT NAME: Usually it is AuthContext.js, not AuthContent
 import { AuthContext } from './contexts/AuthContent'; 
+import { Toaster } from 'react-hot-toast';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -70,6 +71,7 @@ function App() {
   return (
     <AuthContext.Provider value={{ handleLogin, handleLogout, isAuthenticated, isAdmin, user }}>
       <ErrorBoundary>
+        <Toaster position="top-center" />
         <div>
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />

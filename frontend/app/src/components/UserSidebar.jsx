@@ -7,9 +7,54 @@ import {
   Plus,
   ChevronsUpDown,
   X,
-  LogOut
+  LogOut,
+  HandCoins,
+  Hand
 } from 'lucide-react';
 import { AuthContext } from '../contexts/AuthContent';
+
+// 1. Updated SidebarItem to match the circular design
+const SidebarItem = ({ 
+  icon: Icon, 
+  label, 
+  count, 
+  active, 
+  onClick
+}) => {
+  return (
+    <button 
+      onClick={onClick}
+      className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${
+        active 
+          ? 'bg-blue-50 text-[#1a1f63]' 
+          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+      }`}
+    >
+      <div className="flex items-center gap-3">
+        <Icon 
+          size={20} 
+          className={`transition-colors ${
+            active ? 'stroke-[#1a1f63]' : 'stroke-gray-500 group-hover:stroke-gray-700'
+          }`} 
+        />
+        <span className="font-semibold text-sm">{label}</span>
+      </div>
+      
+      {/* CIRCULAR BADGE DESIGN */}
+      {count > 0 && (
+        <span className={`
+          flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold transition-all
+          ${active 
+            ? 'bg-[#1a1f63] text-white shadow-md shadow-indigo-200' // Active: Dark Blue (Like #4 in image)
+            : 'bg-gray-200 text-gray-600 group-hover:bg-gray-300'   // Inactive: Gray (Like #3 & #5 in image)
+          }
+        `}>
+          {count}
+        </span>
+      )}
+    </button>
+  );
+};
 
 export const UserSidebar = ({ 
   isOpen, 
@@ -23,16 +68,6 @@ export const UserSidebar = ({
 
   const authContext = useContext(AuthContext);
   const handleLogout = authContext ? authContext.handleLogout : () => console.warn("AuthContext not found");
-
-  // Helper to generate button classes
-  const getButtonClass = (pageName) => 
-    `w-full flex items-center justify-between px-4 py-3 rounded-xl transition-colors group ${
-      activePage === pageName ? 'bg-blue-50 text-[#1a1f63]' : 'text-gray-600 hover:bg-gray-50'
-    }`;
-
-  // Helper to generate icon classes
-  const getIconClass = (pageName) => 
-    activePage === pageName ? 'stroke-[#1a1f63]' : 'stroke-gray-500';
 
   return (
     <>
@@ -52,25 +87,21 @@ export const UserSidebar = ({
         md:translate-x-0 
       `}>
         
-        {/* 1. LOGO HEADER */}
+        {/* LOGO HEADER */}
         <div className="h-20 flex items-center justify-between px-6">
           <div className="flex items-center gap-0.5 text-2xl font-black tracking-tighter text-[#1a1f63] ml-3">
             <span className="text-yellow-400">i</span>REQUEST
             <span className="text-xs ml-1 bg-yellow-400 text-[#1a1f63] px-1.5 py-0.5 rounded uppercase tracking-widest font-bold">Student</span>
           </div>
           
-          {/* Mobile Close Button */}
-          <button 
-            onClick={onClose} 
-            className="md:hidden text-gray-500 hover:text-red-500"
-          >
+          <button onClick={onClose} className="md:hidden text-gray-500 hover:text-red-500">
             <X size={24} />
           </button>
         </div>
 
-        {/* 2. PROFILE SECTION */}
+        {/* PROFILE SECTION */}
         <div className="px-6 mb-2">
-            <div className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100">
+            <div className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 transition-colors cursor-pointer border border-transparent hover:border-gray-100 group">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 overflow-hidden flex items-center justify-center">
                         <img 
@@ -88,12 +119,12 @@ export const UserSidebar = ({
                         </span>
                     </div>
                 </div>
-                <ChevronsUpDown size={16} className="text-gray-400" />
+                <ChevronsUpDown size={16} className="text-gray-400 group-hover:text-gray-600" />
             </div>
             <div className="h-px w-full bg-gray-100 mt-4 mb-2"></div>
         </div>
 
-        {/* 3. ACTION BUTTON */}
+        {/* ACTION BUTTON */}
         <div className="px-6 mb-2">
             <button 
                 onClick={() => { onRequestClick(); onClose(); }}
@@ -104,80 +135,49 @@ export const UserSidebar = ({
             </button>
         </div>
 
-        {/* 4. NAVIGATION LINKS */}
-        <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto">
+        {/* NAVIGATION LINKS */}
+        <div className="flex-1 px-4 py-2 space-y-1 overflow-y-auto no-scrollbar">
             
             <div className="px-4 pt-4 pb-2">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Request Status</p>
             </div>
 
-            {/* Pending */}
-            <button 
-                onClick={() => { onPageChange('Pending'); onClose(); }}
-                className={getButtonClass('Pending')}
-            >
-                <div className="flex items-center gap-3">
-                    <Clock size={20} className={getIconClass('Pending')} />
-                    <span className="font-semibold text-sm">Pending</span>
-                </div>
-                {stats.pending > 0 && (
-                    <span className="bg-yellow-100 text-yellow-700 text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                        {stats.pending}
-                    </span>
-                )}
-            </button>
+            {/* Removed badgeColor prop since we now use the active state for coloring */}
+            <SidebarItem 
+              icon={Clock}
+              label="Pending"
+              count={stats.pending}
+              active={activePage === 'Pending'}
+              onClick={() => { onPageChange('Pending'); onClose(); }}
+            />
 
-            {/* To Pay */}
-            <button 
-                onClick={() => { onPageChange('To Pay'); onClose(); }}
-                className={getButtonClass('To Pay')}
-            >
-                <div className="flex items-center gap-3">
-                    <CreditCard size={20} className={getIconClass('To Pay')} />
-                    <span className="font-semibold text-sm">To Pay</span>
-                </div>
-                {stats.toPay > 0 && (
-                    <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                        {stats.toPay}
-                    </span>
-                )}
-            </button>
+            <SidebarItem 
+              icon={CreditCard}
+              label="To Pay"
+              count={stats.toPay}
+              active={activePage === 'To Pay'}
+              onClick={() => { onPageChange('To Pay'); onClose(); }}
+            />
 
-            {/* Completed */}
-            <button 
-                onClick={() => { onPageChange('Completed'); onClose(); }}
-                className={getButtonClass('Completed')}
-            >
-                <div className="flex items-center gap-3">
-                    <CheckCircle size={20} className={getIconClass('Completed')} />
-                    <span className="font-semibold text-sm">Completed</span>
-                </div>
-                {stats.completed > 0 && (
-                    <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                        {stats.completed}
-                    </span>
-                )}
-            </button>
+            <SidebarItem 
+              icon={HandCoins}
+              label="To Claim"
+              count={stats.completed}
+              active={activePage === 'Completed'}
+              onClick={() => { onPageChange('Completed'); onClose(); }}
+            />
 
-            {/* Rejected */}
-            <button 
-                onClick={() => { onPageChange('Rejected'); onClose(); }}
-                className={getButtonClass('Rejected')}
-            >
-                <div className="flex items-center gap-3">
-                    <XCircle size={20} className={getIconClass('Rejected')} />
-                    <span className="font-semibold text-sm">Rejected</span>
-                </div>
-                {stats.rejected > 0 && (
-                    <span className="bg-red-100 text-red-700 text-xs font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                        {stats.rejected}
-                    </span>
-                )}
-            </button>
+            <SidebarItem 
+              icon={CheckCircle}
+              label="Completed"
+              count={stats.rejected}
+              active={activePage === 'Rejected'}
+              onClick={() => { onPageChange('Rejected'); onClose(); }}
+            />
 
         </div>
         
-        {/* 5. LOGOUT BUTTON */}
+        {/* LOGOUT BUTTON */}
         <div className="p-4 border-t border-gray-100">
           <button 
             onClick={handleLogout} 

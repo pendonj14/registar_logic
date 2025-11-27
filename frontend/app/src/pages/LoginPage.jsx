@@ -78,7 +78,7 @@ const Login = () => {
                     <div className="w-full max-w-md mt-20 md:hidden relative z-50"> 
                         <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center hidden md:block">Login</h1>
 
-                        <form onSubmit={handleSubmit} className="w-full space-y-6 mt-5">
+                        <form onSubmit={handleSubmit} className="w-full space-y-5 mt-5">
                             <div className="space-y-2">
                                 <input
                                     id="username-mobile"
@@ -165,10 +165,7 @@ const Login = () => {
 
             {/* RIGHT HALF - Desktop Login Form (Hidden on small screens) */}
             <div className="hidden md:flex w-full md:w-1/2 bg-white flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-                <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
-                <div className="absolute -top-50 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full"></div>
-                <div className="absolute -bottom-10 -right-50 w-[25rem] h-[25rem] bg-[radial-gradient(circle,rgba(255,237,195,0.6),transparent_70%)] rounded-full"></div>
-
+              
                 {/* DESKTOP SIGN-UP LINK: Visible on desktop, placed top right */}
                 <div className="absolute top-8 right-8">
                     <p className="text-gray-600">

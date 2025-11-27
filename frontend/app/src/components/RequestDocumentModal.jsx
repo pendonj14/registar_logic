@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { X, UploadCloud, CheckSquare, Square, ChevronDown, ChevronUp, Info } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 import RequirementsModal from './RequirementsModal';
+import toast, {Toaster} from 'react-hot-toast';
 
 // Moved outside component to be stable and accessible
 const documentOptions = [
@@ -58,7 +59,7 @@ const exemptDocuments = [
   "Permit to Study (P100)"
 ];
 
-const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
+const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
   const [isRequirementsModalOpen, setIsRequirementsModalOpen] = useState(false);
   const [selectedRestrictedDoc, setSelectedRestrictedDoc] = useState("");
 
@@ -66,6 +67,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
     request: [], 
     custom_request: '', 
     year_level: '1st Year',
+    college_program: '',
     is_graduate: false,
     last_attended: '',
     clearance_status: false,
@@ -79,6 +81,18 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
   
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null); 
+
+  // --- FIX 1: POPULATE STATE FROM PROP CORRECTLY ---
+  // When modal opens, or userProgram loads, update the form state
+  useEffect(() => {
+    if (isOpen) {
+        setFormData(prev => ({
+            ...prev,
+            // If userProgram exists, use it. Otherwise default to empty string.
+            college_program: userProgram || '' 
+        }));
+    }
+  }, [isOpen, userProgram]);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -94,28 +108,22 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
     };
   }, [dropdownRef, isOpen]);
 
-  // --- UPDATED PRICE CALCULATION ---
   const totalPrice = useMemo(() => {
-    // 1. Get the list of Certification names so we can check against them
     const certOptions = documentOptions.find(g => g.label.includes("Certifications"))?.options || [];
 
     return formData.request.reduce((total, item) => {
-      // Check for explicit price in name like "(P100)"
       const match = item.match(/\(P(\d+)/);
       
       if (match) {
-        // Found explicit price (e.g., Major Documents)
         return total + parseInt(match[1], 10);
       } 
       else if (certOptions.includes(item)) {
-        // No explicit price, but it's in the Certifications list -> Add 80
         return total + 80;
       }
 
       return total;
     }, 0);
   }, [formData.request]);
-  // --------------------------------
 
   const isPurposeRequired = useMemo(() => {
     if (formData.request.length === 0) return false;
@@ -165,23 +173,30 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
     e.preventDefault();
     setLoading(true);
 
-    if (!formData.clearance_status) {
-        alert("You must be cleared to submit a request.");
+     if (!formData.clearance_status) {
+        toast.error("You must be cleared to submit a request.");
         setLoading(false);
         return;
     }
 
     if (formData.request.length === 0) {
-        alert("Please select at least one document.");
+        toast.error("Please select at least one document.");
+        setLoading(false);
+        return;
+    }
+
+    if (!formData.college_program || !formData.college_program.trim()) {
+        toast.error("Please specify your Program/Course.");
         setLoading(false);
         return;
     }
 
     if (isPurposeRequired && !formData.request_purpose.trim()) {
-        alert("Please provide a purpose for your request.");
+        toast.error("Please provide a purpose for your request.");
         setLoading(false);
         return;
     }
+
 
     const dataToSend = new FormData();
 
@@ -200,6 +215,10 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
     dataToSend.append("request", cleanedRequests.join(", "));
     dataToSend.append("cost", totalPrice.toFixed(2));
     dataToSend.append("year_level", formData.year_level);
+    
+    // Ensure we send the value from the form data (which might be edited by user)
+    dataToSend.append("college_program", formData.college_program);
+    
     dataToSend.append("affiliation", formData.affiliation);
     dataToSend.append("clearance_status", "true");
     dataToSend.append("is_graduate", formData.is_graduate ? "true" : "false");
@@ -223,10 +242,12 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
         },
       });
 
+      // Reset form
       setFormData({
         request: [],
         custom_request: "",
         year_level: "1st Year",
+        college_program: userProgram || "", // Reset to default on success
         is_graduate: false,
         last_attended: "",
         clearance_status: false,
@@ -238,10 +259,10 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
 
       onSuccess();
       onClose();
-      alert("Request submitted successfully!");
+      toast.success("Request submitted successfully!");
     } catch (error) {
       console.error("Submit Error:", error);
-      alert("Error submitting request.");
+      toast.error("Error submitting request.");
     } finally {
       setLoading(false);
     }
@@ -258,7 +279,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
   return (
     <>
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto custom-scrollbar">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto no-scrollbar">
 
         <div className="sticky top-0 bg-white px-6 py-4 border-b border-gray-100 flex justify-between items-center z-10">
           <div>
@@ -273,6 +294,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
 
+            {/* Document Dropdown */}
             <div className="space-y-1 relative" ref={dropdownRef}>
               <label className="text-sm font-semibold text-gray-700">Document Type</label>
               <div 
@@ -290,7 +312,7 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
               </div>
 
               {isDropdownOpen && (
-                <div className="absolute top-full left-0 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto custom-scrollbar p-1">
+                <div className="absolute top-full left-0 w-full mt-2 bg-white border border-gray-200 rounded-xl shadow-2xl z-50 max-h-64 overflow-y-auto no-scrollbar p-1">
                     {documentOptions.map((group, idx) => (
                     <div key={idx} className="mb-2">
                         <div className={`sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wider z-10 ${
@@ -311,10 +333,10 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                                 onClick={() => handleDocumentToggle(option)}
                                 className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
                                     isSelected 
-                                        ? 'bg-blue-50 text-[#1a1f63]' 
-                                        : isRestricted 
-                                            ? 'hover:bg-orange-50 text-gray-600' 
-                                            : 'hover:bg-gray-50 text-gray-700'
+                                    ? 'bg-blue-50 text-[#1a1f63]' 
+                                    : isRestricted 
+                                        ? 'hover:bg-orange-50 text-gray-600' 
+                                        : 'hover:bg-gray-50 text-gray-700'
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -361,6 +383,8 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Year Level */}
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-gray-700">Year Level</label>
                 <select
@@ -375,11 +399,29 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
                   <option value="4th Year">4th Year</option>
                   <option value="5th Year">5th Year</option>
                   <option value="Graduate Studies">Graduate Studies</option>
+                  <option value="Senior High School">Senior High School</option>
                 </select>
               </div>
 
+              {/* --- FIX 2: CONTROLLED INPUT --- */}
+              {/* Program Input */}
+              <div className="space-y-1">
+                <label className="text-sm font-semibold text-gray-700">Program / Course</label>
+                <input
+                  type="text"
+                  name="college_program"
+                  // Bind directly to formData state, NOT the prop.
+                  // The prop was already loaded into formData by the useEffect.
+                  value={formData.college_program}
+                  onChange={handleChange}
+                  placeholder="e.g. BS Information Technology"
+                  required
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#1a1f63] text-black"
+                />
+              </div>
+
               {formData.is_graduate && (
-                <div className="space-y-1">
+                <div className="space-y-1 md:col-span-2">
                   <label className="text-sm font-semibold text-gray-700">Last S.Y. Attended</label>
                   <input
                     type="text"
@@ -419,11 +461,12 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess }) => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Clearance Proof (Optional)</label>
+              <label className="text-sm font-semibold text-gray-700">Clearance Proof</label>
               <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors group">
                 <input
                   type="file"
                   accept="image/*"
+                  required
                   onChange={handleFileChange}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />

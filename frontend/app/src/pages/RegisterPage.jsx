@@ -3,6 +3,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from '../utils/axios';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+// Import icons
+import { Calendar } from 'lucide-react';
 
 const Register = () => {
     // State for form data
@@ -27,6 +29,7 @@ const Register = () => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState("");
     const dropdownRef = useRef(null); 
+    const datePickerRef = useRef(null); 
     
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -189,7 +192,7 @@ const Register = () => {
         }
     };
 
-    const inputClassName = "w-full px-3 py-2 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-indigo-500 autofill:bg-white autofill:text-gray-900 [-webkit-text-fill-color:theme(colors.gray.900)] [-webkit-box-shadow:0_0_0px_1000px_white_inset] transition-all duration-500 bg-white appearance-none bg-clip-padding";
+    const inputClassName = "w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500 bg-white";
 
     const EyeIcon = ({ isVisible }) => (
         isVisible ? (
@@ -205,294 +208,324 @@ const Register = () => {
     );
 
     return (
-        <div className="flex h-screen w-screen fixed inset-0 flex flex-col md:flex-row overflow-hidden">
-            {/* LEFT SIDE - No Scroll */}
-            <div className="w-full md:w-1/2 bg-white flex flex-col justify-center relative h-screen overflow-hidden p-6 md:p-12">
+        <div className="h-screen w-screen fixed inset-0 flex flex-col md:flex-row">
+            
+            {/* LEFT SIDE - Form */}
+            {/* FIX 1: Removed overflow-hidden and added overflow-y-auto to allow scrolling for tall forms */}
+            <div className="w-full md:w-1/2 bg-white flex flex-col relative h-full">
                 
-                {/* Background Blobs */}
-                <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
-                <div className="absolute -bottom-10 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
-                <div className="absolute -top-50 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] pointer-events-none rounded-full"></div>
-
-                {/* TOP-LEFT LINK: Only visible on Desktop (md:block) */}
-                <div className="absolute top-8 left-8 z-20 hidden md:block">
-                    <p className="text-gray-600">
-                        Have an account already?{' '}
-                        <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
-                            Login!
-                        </Link>
-                    </p>
-                </div>
-
-                <div className="w-full max-w-md mx-auto relative z-10 flex flex-col justify-center h-full">
-                    <div className="mb-4 text-center">
-                        <h1 className="text-3xl font-bold text-indigo-950 mb-2">Register</h1>
-                        <div className="flex justify-center gap-2 mb-4">
-                            <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 1 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
-                            <div className={`h-2 w-8 rounded-full transition-colors duration-300 ${step === 2 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
-                        </div>
-                        <h2 className="text-xl font-semibold text-indigo-950">
-                            {step === 1 ? 'Account Details' : 'Profile Information'}
-                        </h2>
+                {/* Scrollable Container */}
+                <div className="flex-1 overflow-y-auto px-6 md:px-12 py-8 no-scrollbar">
+                    
+                    {/* TOP-LEFT LINK: Only visible on Desktop */}
+                    <div className="hidden md:block mb-8">
+                        <p className="text-gray-600">
+                            Have an account already?{' '}
+                            <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
+                                Login!
+                            </Link>
+                        </p>
                     </div>
 
-                    {error && (
-                        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded mb-2 text-sm">
-                            {error}
+                    {/* Centered Form Content */}
+                    <div className="w-full max-w-md mx-auto flex flex-col justify-center min-h-[calc(100vh-100px)]">
+                        <div className="mb-6 text-center">
+                            <h1 className="text-3xl font-bold text-indigo-950 mb-4">Register</h1>
+                            
+                            {/* Progress Indicators */}
+                            <div className="flex justify-center gap-3 mb-6">
+                                <div className={`h-1.5 w-12 rounded-full transition-colors duration-300 ${step === 1 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
+                                <div className={`h-1.5 w-12 rounded-full transition-colors duration-300 ${step === 2 ? 'bg-indigo-950' : 'bg-gray-200'}`}></div>
+                            </div>
+                            
+                            <h2 className="text-xl font-bold text-indigo-950">
+                                {step === 1 ? 'Account Details' : 'Profile Information'}
+                            </h2>
                         </div>
-                    )}
 
-                    <form onSubmit={handleSubmit} autoComplete="off" className="w-full">
-                        {/* PART 1: Account Information */}
-                        {step === 1 && (
-                            <div className="space-y-3">
-                                <input
-                                    type="text"
-                                    name="username"
-                                    placeholder="Student ID Number (10 digits)"
-                                    value={formData.username}
-                                    onChange={handleChange}
-                                    required
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                <input
-                                    type="email"
-                                    name="email"
-                                    placeholder="Email Address"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    required
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                
-                                <div className="relative">
-                                    <input
-                                        type={showPassword ? "text" : "password"}
-                                        name="password"
-                                        placeholder="Password"
-                                        value={formData.password}
-                                        onChange={handleChange}
-                                        required
-                                        spellCheck="false"
-                                        autoComplete="new-password"
-                                        className={`${inputClassName} pr-10`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-700"
-                                    >
-                                        <EyeIcon isVisible={showPassword} />
-                                    </button>
-                                </div>
-
-                                <div className="relative">
-                                    <input
-                                        type={showConfirmPassword ? "text" : "password"}
-                                        name="confirm_password"
-                                        placeholder="Confirm Password"
-                                        value={formData.confirm_password}
-                                        onChange={handleChange}
-                                        required
-                                        spellCheck="false"
-                                        autoComplete="new-password"
-                                        className={`${inputClassName} pr-10`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                                        className="absolute inset-y-0 right-3 flex items-center text-gray-500 hover:text-indigo-700"
-                                    >
-                                        <EyeIcon isVisible={showConfirmPassword} />
-                                    </button>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={handleNext}
-                                    className="w-full bg-indigo-950 text-white py-2 px-4 rounded hover:bg-indigo-900 transition duration-300 font-semibold mt-2"
-                                >
-                                    Next
-                                </button>
+                        {error && (
+                            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg mb-4 text-sm text-center">
+                                {error}
                             </div>
                         )}
 
-                        {/* PART 2: Profile Information */}
-                        {step === 2 && (
-                            <div className="flex flex-col space-y-2">
-                                <input
-                                    type="text"
-                                    name="first_name"
-                                    placeholder="First Name"
-                                    value={formData.first_name}
-                                    onChange={handleChange}
-                                    required
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                <input
-                                    type="text"
-                                    name="middle_name"
-                                    placeholder="Middle Name"
-                                    value={formData.middle_name}
-                                    onChange={handleChange}
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                <input
-                                    type="text"
-                                    name="last_name"
-                                    placeholder="Last Name"
-                                    value={formData.last_name}
-                                    onChange={handleChange}
-                                    required
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                <input
-                                    type="text"
-                                    name="extension_name"
-                                    placeholder="Extension Name (e.g., Jr.)"
-                                    value={formData.extension_name}
-                                    onChange={handleChange}
-                                    spellCheck="false"
-                                    autoComplete="off"
-                                    className={inputClassName}
-                                />
-                                
-                                <div className='w-full'>
-                                    <DatePicker
-                                        selected={formData.birth_date}
-                                        onChange={(date) => setFormData({ ...formData, birth_date: date })}
-                                        placeholderText="Birth Date"
-                                        className={inputClassName}
-                                        dateFormat="yyyy-MM-dd"
-                                        maxDate={new Date()}
-                                        showMonthDropdown
-                                        showYearDropdown
-                                        dropdownMode="select"
-                                        wrapperClassName="w-full"
-                                    />
-                                </div>
-
-                                {/* Program Dropdown */}
-                                <div className="relative w-full" ref={dropdownRef}>
-                                    <div 
-                                        className={`${inputClassName} cursor-pointer flex items-center justify-between text-left`}
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    >
-                                        <span className={`block truncate ${formData.college_program ? "text-gray-900" : "text-gray-400"}`}>
-                                            {formData.college_program || "Select Program"}
-                                        </span>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                                        </svg>
+                        <form onSubmit={handleSubmit} autoComplete="off" className="w-full pb-10">
+                            {/* PART 1: Account Information */}
+                            {step === 1 && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <input
+                                            type="text"
+                                            name="username"
+                                            placeholder="Student ID Number (10 digits)"
+                                            value={formData.username}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            placeholder="Email Address"
+                                            value={formData.email}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                    </div>
+                                    
+                                    <div className="space-y-2 relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            name="password"
+                                            placeholder="Password"
+                                            value={formData.password}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="new-password"
+                                            className={`${inputClassName} pr-12`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-indigo-950 transition-colors"
+                                        >
+                                            <EyeIcon isVisible={showPassword} />
+                                        </button>
                                     </div>
 
-                                    {/* Dropdown List */}
-                                    {isDropdownOpen && (
-                                        <div className="absolute bottom-full mb-1 left-0 w-full bg-white border border-gray-300 rounded shadow-2xl z-50 max-h-48 flex flex-col overflow-hidden">
-                                            <div className="p-2 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
-                                                <div className="relative">
-                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-2 top-2.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                                    </svg>
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Search..."
-                                                        className="w-full pl-8 pr-3 py-1.5 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500 text-gray-900 bg-white placeholder-gray-500"
-                                                        value={searchTerm}
-                                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                                        autoFocus
-                                                        spellCheck="false"
-                                                    />
-                                                </div>
-                                            </div>
+                                    <div className="space-y-2 relative">
+                                        <input
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            name="confirm_password"
+                                            placeholder="Confirm Password"
+                                            value={formData.confirm_password}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="new-password"
+                                            className={`${inputClassName} pr-12`}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-indigo-950 transition-colors"
+                                        >
+                                            <EyeIcon isVisible={showConfirmPassword} />
+                                        </button>
+                                    </div>
 
-                                            <div className="overflow-y-auto custom-scrollbar flex-1">
-                                                {filteredOptions.length === 0 ? (
-                                                    <div className="px-4 py-3 text-xs text-gray-500 text-center">No programs found</div>
-                                                ) : (
-                                                    filteredOptions.map((college, idx) => (
-                                                        <div key={idx}>
-                                                            <div className="px-3 py-1.5 bg-gray-100 text-[10px] font-bold text-indigo-900 uppercase tracking-wide sticky top-0">
-                                                                {college.college}
-                                                            </div>
-                                                            {college.programs.map((prog, pIdx) => (
-                                                                <div 
-                                                                    key={pIdx}
-                                                                    onClick={() => handleProgramSelect(prog)}
-                                                                    className={`px-4 py-2 text-xs cursor-pointer hover:bg-indigo-50 hover:text-indigo-900 transition-colors border-b border-gray-50 last:border-b-0 ${formData.college_program === prog ? 'bg-indigo-50 text-indigo-900 font-medium' : 'text-gray-700'}`}
-                                                                >
-                                                                    {prog}
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    ))
-                                                )}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                <input
-                                    type="text"
-                                    name="contact_number"
-                                    placeholder="Contact Number (11 digits)"
-                                    value={formData.contact_number}
-                                    onChange={handleChange}
-                                    className={inputClassName}
-                                    autoComplete="off"
-                                />
-
-                                <div className="flex justify-between gap-3 mt-2">
                                     <button
                                         type="button"
-                                        onClick={() => setStep(1)}
-                                        className="w-1/3 bg-gray-200 text-gray-700 py-2 px-3 rounded hover:bg-gray-300 transition duration-300 font-semibold text-sm"
+                                        onClick={handleNext}
+                                        className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold mt-4"
                                     >
-                                        Back
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="w-2/3 bg-indigo-950 text-white py-2 px-3 rounded hover:bg-indigo-900 transition duration-300 font-semibold text-sm"
-                                    >
-                                        {loading ? 'Registering...' : 'Register'}
+                                        Next
                                     </button>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* MOBILE ONLY: Login Link under the buttons */}
-                        <div className="mt-4 text-center md:hidden">
-                            <p className="text-gray-600 text-sm">
-                                Have an account already?{' '}
-                                <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
-                                    Login!
-                                </Link>
-                            </p>
-                        </div>
-                    </form>
+                            {/* PART 2: Profile Information */}
+                            {step === 2 && (
+                                <div className="flex flex-col space-y-4">
+                                    <div className="grid grid-cols-1 gap-4">
+                                        <input
+                                            type="text"
+                                            name="first_name"
+                                            placeholder="First Name"
+                                            value={formData.first_name}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                        <input
+                                            type="text"
+                                            name="middle_name"
+                                            placeholder="Middle Name"
+                                            value={formData.middle_name}
+                                            onChange={handleChange}
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                        <input
+                                            type="text"
+                                            name="last_name"
+                                            placeholder="Last Name"
+                                            value={formData.last_name}
+                                            onChange={handleChange}
+                                            required
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                        <input
+                                            type="text"
+                                            name="extension_name"
+                                            placeholder="Extension Name (e.g., Jr.)"
+                                            value={formData.extension_name}
+                                            onChange={handleChange}
+                                            spellCheck="false"
+                                            autoComplete="off"
+                                            className={inputClassName}
+                                        />
+                                    </div>
+                                    
+                                    {/* Date Picker with Calendar Icon */}
+                                    <div className='w-full relative'>
+                                        <DatePicker
+                                            ref={datePickerRef}
+                                            selected={formData.birth_date}
+                                            onChange={(date) => setFormData({ ...formData, birth_date: date })}
+                                            placeholderText="Birth Date"
+                                            className={inputClassName}
+                                            dateFormat="yyyy-MM-dd"
+                                            maxDate={new Date()}
+                                            showMonthDropdown
+                                            showYearDropdown
+                                            dropdownMode="select"
+                                            wrapperClassName="w-full"
+                                        />
+                                        <button 
+                                            type="button"
+                                            onClick={() => datePickerRef.current?.setOpen(true)}
+                                            className="absolute inset-y-0 right-4 flex items-center text-gray-400 hover:text-indigo-950"
+                                        >
+                                            <Calendar size={20} />
+                                        </button>
+                                    </div>
+
+                                    {/* Program Dropdown */}
+                                    <div className="relative w-full" ref={dropdownRef}>
+                                        <div 
+                                            className={`${inputClassName} cursor-pointer flex items-center justify-between text-left`}
+                                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        >
+                                            <span className={`block truncate ${formData.college_program ? "text-gray-900" : "text-gray-500"}`}>
+                                                {formData.college_program || "Select Program"}
+                                            </span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                            </svg>
+                                        </div>
+
+                                        {isDropdownOpen && (
+                                            <div className="absolute top-full mt-1 left-0 w-full bg-white border border-gray-300 rounded-lg shadow-xl z-50 max-h-60 flex flex-col overflow-hidden">
+                                                <div className="p-2 border-b border-gray-100 bg-gray-50 sticky top-0 z-10">
+                                                    <div className="relative">
+                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 absolute left-3 top-2.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                        </svg>
+                                                        <input
+                                                            type="text"
+                                                            placeholder="Search..."
+                                                            className="w-full pl-9 pr-3 py-2 text-sm border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 text-gray-900 bg-white placeholder-gray-500"
+                                                            value={searchTerm}
+                                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                                            autoFocus
+                                                            spellCheck="false"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="overflow-y-auto custom-scrollbar flex-1">
+                                                    {filteredOptions.length === 0 ? (
+                                                        <div className="px-4 py-3 text-sm text-gray-500 text-center">No programs found</div>
+                                                    ) : (
+                                                        filteredOptions.map((college, idx) => (
+                                                            <div key={idx}>
+                                                                <div className="px-4 py-2 bg-gray-100 text-xs font-bold text-indigo-900 uppercase tracking-wide sticky top-0">
+                                                                    {college.college}
+                                                                </div>
+                                                                {college.programs.map((prog, pIdx) => (
+                                                                    <div 
+                                                                        key={pIdx}
+                                                                        onClick={() => handleProgramSelect(prog)}
+                                                                        className={`px-4 py-3 text-sm cursor-pointer hover:bg-indigo-50 hover:text-indigo-900 transition-colors border-b border-gray-50 last:border-b-0 ${formData.college_program === prog ? 'bg-indigo-50 text-indigo-900 font-medium' : 'text-gray-700'}`}
+                                                                    >
+                                                                        {prog}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <input
+                                        type="text"
+                                        name="contact_number"
+                                        placeholder="Contact Number (11 digits)"
+                                        value={formData.contact_number}
+                                        onChange={handleChange}
+                                        className={inputClassName}
+                                        autoComplete="off"
+                                    />
+
+                                    <div className="flex justify-between gap-4 mt-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => setStep(1)}
+                                            className="w-1/3 bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 transition duration-300 font-semibold"
+                                        >
+                                            Back
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={loading}
+                                            className="w-2/3 bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold"
+                                        >
+                                            {loading ? 'Registering...' : 'Register'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* MOBILE ONLY: Login Link under the buttons */}
+                            <div className="mt-6 text-center md:hidden">
+                                <p className="text-gray-600 text-sm">
+                                    Have an account already?{' '}
+                                    <Link to="/login" className="text-indigo-950 font-semibold hover:text-indigo-800">
+                                        Login!
+                                    </Link>
+                                </p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
-            {/* RIGHT SIDE (Unchanged) */}
-            <div className="hidden md:flex w-full md:w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[-15px_0_25px_-15px_rgba(234,179,8,0.6)] flex flex-col items-center text-center p-12">
-                <h2 className="text-xl font-bold text-indigo-950 mt-35">Get Started With iREQUEST</h2>
-                <img src="/logo.png" alt="logo" className="mx-auto h-[22rem] w-auto fixed inset-y-[3.75rem] -translate-y-6 md:translate-y-6" />
-                <p className="text-indigo-950 font-bold italic mt-20">Your Documents. Your Time.</p>
-                <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-12 w-full max-w-md">
-                    <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit mx-auto">
+            {/* RIGHT SIDE - Image Background */}
+            {/* FIX 2: Changed fixed image positioning to Flexbox to prevent text overlapping */}
+            <div className="hidden md:flex w-full md:w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[-15px_0_25px_-15px_rgba(234,179,8,0.6)] flex-col justify-between items-center text-center p-12 z-10">
+                
+                {/* Header Section */}
+                <div className="mt-20">
+                     <h2 className="text-4xl font-bold text-indigo-950 hidden md:block -mb-25 mt-20">Get Started</h2>
+                </div>
+                
+                {/* Logo - Positioned Relatively in Flex Container */}
+                <div className="flex-1 flex flex-col justify-center items-center w-full">
+                    <img src="/logo.png" alt="logo" className="h-90 w-auto object-contain my-4 -mb-30 -mt-25" />
+                    <p className="text-indigo-950 font-bold italic  text-xl -mt-10">Your Documents. Your Time.</p>
+                </div>
+               
+                {/* Bottom Card */}
+                <div className="bg-white/10 backdrop-blur-md p-8 rounded w-full max-w-md mb-8">
+                    <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit mx-auto sm:mx-0">
                         <p className="text-sm sm:text-base text-center sm:text-left break-words">
-                            Create Your Account to Get Started
+                            Create Your Account
                         </p>
                     </div>
                     <p className="text-neutral-500 text-sm leading-relaxed font-normal text-justify">

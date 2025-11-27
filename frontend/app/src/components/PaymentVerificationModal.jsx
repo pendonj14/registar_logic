@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { X, CheckCircle, Calendar, Clock, AlertCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const PaymentVerificationModal = ({ isOpen, onClose, request, onConfirmPayment }) => {
   const [selectedDate, setSelectedDate] = useState('');
@@ -20,6 +21,7 @@ const PaymentVerificationModal = ({ isOpen, onClose, request, onConfirmPayment }
     const finalDateTime = `${selectedDate}T15:00:00`;
     onConfirmPayment(request.id, finalDateTime);
     setIsConfirming(false); // Reset state
+    toast.success("Payment verified!");
   };
 
   const handleCancelConfirmation = () => {

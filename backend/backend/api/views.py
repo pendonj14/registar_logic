@@ -42,6 +42,19 @@ def create_request(request):
     )
     
     if serializer.is_valid():
+        user = request.user
+
+        # --- START NEW LOGIC: Update User Profile Program ---
+        # 1. Get the new program from the form data
+        new_program = request.data.get('college_program')
+        
+        # 2. Check if user has a profile and if the program actually changed
+        if new_program and hasattr(user, 'profile'):
+            profile = user.profile
+            if profile.college_program != new_program:
+                profile.college_program = new_program
+                profile.save() # Save the change to the UserProfile table
+        # --- END NEW LOGIC ---
         # Handle file upload for eclearance_proof if present
         eclearance_proof = request.FILES.get('eclearance_proof')
         

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, UploadCloud, CreditCard } from 'lucide-react';
 import axiosInstance from '../utils/axios';
+import toast from 'react-hot-toast';
 
 const UploadPaymentModal = ({ isOpen, onClose, request, onSuccess }) => {
   const [paymentImage, setPaymentImage] = useState(null);
@@ -28,7 +29,7 @@ const UploadPaymentModal = ({ isOpen, onClose, request, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!paymentImage) {
-      alert("Please upload a payment receipt.");
+      toast.error("Please upload a payment receipt.");
       return;
     }
 
@@ -43,12 +44,12 @@ const UploadPaymentModal = ({ isOpen, onClose, request, onSuccess }) => {
         },
       });
       
-      alert("Payment proof uploaded successfully!");
+      toast.success("Payment uploaded successfully!");
       onSuccess(); 
       onClose();   
     } catch (error) {
       console.error("Upload failed:", error);
-      alert("Failed to upload payment proof.");
+      toast.error("Failed to upload payment proof.");
     } finally {
       setLoading(false);
     }

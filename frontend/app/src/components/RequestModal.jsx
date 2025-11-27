@@ -1,8 +1,17 @@
-// src/components/RequestModal.jsx
 import React from 'react';
 import { X, User, Calendar, Phone, Mail, FileText, ShieldCheck, School, Info, CircleUser } from 'lucide-react';
 
-const RequestModal = ({ isOpen, onClose, request, onApprove, onReject }) => {
+const RequestModal = ({ 
+  isOpen, 
+  onClose, 
+  request, 
+  onApprove, 
+  onReject,
+  // New props for customization
+  approveLabel = "Approve Request",
+  rejectLabel = "Reject Request",
+  showReject = true
+}) => {
   if (!isOpen || !request) return null;
 
   // Helper to format dates
@@ -116,17 +125,19 @@ const RequestModal = ({ isOpen, onClose, request, onApprove, onReject }) => {
 
         {/* --- Footer (Buttons) --- */}
         <div className="p-5 border-t border-gray-100 bg-gray-50 rounded-b-2xl flex justify-center gap-4">
-          <button
-            onClick={() => onReject(request)}
-            className="px-8 py-3 rounded-xl text-red-600 font-bold hover:bg-red-100 hover:scale-105 transition-all duration-200 shadow-sm border border-red-200"
-          >
-            Reject Request
-          </button>
+          {showReject && (
+            <button
+              onClick={() => onReject(request)}
+              className="px-8 py-3 rounded-xl text-red-600 font-bold hover:bg-red-100 hover:scale-105 transition-all duration-200 shadow-sm border border-red-200"
+            >
+              {rejectLabel}
+            </button>
+          )}
           <button
             onClick={() => onApprove(request)}
-            className="px-8 py-3 rounded-xl text-white bg-[#1a1f63] font-bold hover:bg-blue-900 hover:scale-105 transition-all duration-200 shadow-lg shadow-indigo-200"
+            className="px-8 py-3 rounded-xl text-white bg-green-700 font-bold hover:bg-green-900 hover:scale-105 transition-all duration-200 shadow-lg shadow-indigo-200"
           >
-            Approve Request
+            {approveLabel}
           </button>
         </div>
 
