@@ -119,9 +119,10 @@ const Login = () => {
                                         Remember me
                                     </label>
                                 </div>
-                                <a href="#" className="text-sm text-indigo-950 hover:text-blue-950">
+                                {/* Updated Link */}
+                                <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
                                     Forgot password?
-                                </a>
+                                </Link>
                             </div>
 
                             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
@@ -220,9 +221,10 @@ const Login = () => {
                                     Remember me
                                 </label>
                             </div>
-                            <a href="#" className="text-sm text-indigo-950 hover:text-blue-950">
+                            {/* Updated Link */}
+                            <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
                                 Forgot password?
-                            </a>
+                            </Link>
                         </div>
 
                         {error && <div className="text-red-500 text-sm text-center">{error}</div>}

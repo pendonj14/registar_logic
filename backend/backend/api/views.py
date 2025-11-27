@@ -15,6 +15,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db import transaction #
 from rest_framework.views import APIView
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from django.core.mail import send_mail
+from django.conf import settings
+
 
 
 @api_view(['GET'])
@@ -172,6 +178,69 @@ def register_user(request):
         return Response({
             'error': str(e)
         }, status=status.HTTP_400_BAD_REQUEST)
+  
+# --- NEW: STEP 1 - VERIFY CREDENTIALS ---
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def verify_reset_credentials(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    birth_date = request.data.get('birth_date')
+
+    if not all([username, email, birth_date]):
+        return Response({'error': 'All fields (Student ID, Email, Birth Date) are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # 1. Find user by Student ID (username) and Email
+        user = User.objects.get(username=username, email=email)
+        
+        # 2. Check if Birth Date matches the profile
+        if hasattr(user, 'profile'):
+            # Convert profile date to string to compare with input (YYYY-MM-DD)
+            profile_dob = str(user.profile.birth_date)
+            if profile_dob == birth_date:
+                return Response({'message': 'Identity verified.'}, status=status.HTTP_200_OK)
+        
+        return Response({'error': 'Birth date does not match our records.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    except User.DoesNotExist:
+        return Response({'error': 'No account found with this Student ID and Email combination.'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+# --- NEW: STEP 2 - RESET PASSWORD ---
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def reset_password_confirm(request):
+    username = request.data.get('username')
+    email = request.data.get('email')
+    birth_date = request.data.get('birth_date')
+    new_password = request.data.get('new_password')
+
+    if not all([username, email, birth_date, new_password]):
+        return Response({'error': 'Missing required fields.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # 1. Re-verify identity (Security measure)
+        user = User.objects.get(username=username, email=email)
+        
+        if not hasattr(user, 'profile') or str(user.profile.birth_date) != birth_date:
+             return Response({'error': 'Verification failed. Cannot reset password.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. Validate the new password
+        try:
+            validate_password(new_password, user=user)
+        except ValidationError as e:
+            return Response({'error': e.messages}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 3. Save new password
+        user.set_password(new_password)
+        user.save()
+
+        return Response({'message': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+
+    except User.DoesNotExist:
+        return Response({'error': 'User not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod

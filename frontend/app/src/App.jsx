@@ -13,6 +13,7 @@ import './App.css';
 // CHECK THIS IMPORT NAME: Usually it is AuthContext.js, not AuthContent
 import { AuthContext } from './contexts/AuthContent'; 
 import { Toaster } from 'react-hot-toast';
+import ForgotPassword from './pages/ForgotPassword';
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -78,6 +79,7 @@ function App() {
             <Route path="/home" element={<HomePage />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} /> 
+            <Route path="forgot-password" element={<ForgotPassword/>}/>
 
             <Route
               path="/login"
