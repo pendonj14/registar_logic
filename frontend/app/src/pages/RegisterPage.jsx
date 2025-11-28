@@ -3,7 +3,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import axios from '../utils/axios';
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
-// Import icons
 import { Calendar } from 'lucide-react';
 
 const Register = () => {
@@ -131,6 +130,7 @@ const Register = () => {
             setError('Please fill out all fields in this section.');
             return;
         }
+        // Frontend Validation for Length
         if (formData.username.length !== 10) {
             setError('Student ID must be exactly 10 digits.');
             return;
@@ -150,14 +150,17 @@ const Register = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        
         if (!formData.first_name || !formData.last_name || !formData.college_program) {
             setError('Please fill out First Name, Last Name, and Program.');
             return;
         }
+        
         if (formData.contact_number && formData.contact_number.length !== 11) {
             setError('Contact number must be exactly 11 digits.');
             return;
         }
+
         setLoading(true);
         try {
             const payload = { ...formData };
@@ -177,16 +180,30 @@ const Register = () => {
         } catch (err) {
             if (err.response && err.response.data) {
                 const data = err.response.data;
-                if (typeof data === 'string') setError(data);
-                else if (data.error) setError(Array.isArray(data.error) ? data.error.join(', ') : data.error);
+                
+                // SPECIFIC CHECKS FOR USERNAME/EMAIL TO GIVE BETTER MESSAGES
+                if (data.username) {
+                    setError("This Student ID Number is already registered.");
+                } 
+                else if (data.email) {
+                    setError("This Email Address is already registered.");
+                }
+                else if (data.error) {
+                    setError(Array.isArray(data.error) ? data.error.join(', ') : data.error);
+                } 
                 else {
+                    // Fallback for other errors
                     const firstKey = Object.keys(data)[0];
                     if (firstKey) {
                         const val = data[firstKey];
-                        setError(typeof val === 'string' ? val : (Array.isArray(val) ? val.join(', ') : JSON.stringify(val)));
-                    } else setError('Registration failed.');
+                        setError(`${firstKey}: ${typeof val === 'string' ? val : JSON.stringify(val)}`);
+                    } else {
+                        setError('Registration failed. Please try again.');
+                    }
                 }
-            } else setError('Network error or server not reachable.');
+            } else {
+                setError('Network error or server not reachable.');
+            }
         } finally {
             setLoading(false);
         }
@@ -211,7 +228,6 @@ const Register = () => {
         <div className="h-screen w-screen fixed inset-0 flex flex-col md:flex-row">
             
             {/* LEFT SIDE - Form */}
-            {/* FIX 1: Removed overflow-hidden and added overflow-y-auto to allow scrolling for tall forms */}
             <div className="w-full md:w-1/2 bg-white flex flex-col relative h-full">
                 
                 {/* Scrollable Container */}
@@ -507,7 +523,6 @@ const Register = () => {
             </div>
 
             {/* RIGHT SIDE - Image Background */}
-            {/* FIX 2: Changed fixed image positioning to Flexbox to prevent text overlapping */}
             <div className="hidden md:flex w-full md:w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[-15px_0_25px_-15px_rgba(234,179,8,0.6)] flex-col justify-between items-center text-center p-12 z-10">
                 
                 {/* Header Section */}
@@ -515,7 +530,7 @@ const Register = () => {
                      <h2 className="text-4xl font-bold text-indigo-950 hidden md:block -mb-25 mt-20">Get Started</h2>
                 </div>
                 
-                {/* Logo - Positioned Relatively in Flex Container */}
+                {/* Logo */}
                 <div className="flex-1 flex flex-col justify-center items-center w-full">
                     <img src="/logo.png" alt="logo" className="h-90 w-auto object-contain my-4 -mb-30 -mt-25" />
                     <p className="text-indigo-950 font-bold italic  text-xl -mt-10">Your Documents. Your Time.</p>

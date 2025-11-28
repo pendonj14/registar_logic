@@ -13,8 +13,7 @@ urlpatterns = [
     path('register/', register_user, name='register'),
     path('token/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('user/profile/', CurrentUserProfileView.as_view(), name='current-user-profile'),
-    path('verify-reset-credentials/', verify_reset_credentials, name='verify_reset_credentials'),
-    path('reset-password-confirm/', reset_password_confirm, name='reset_password_confirm'),
+    
 
 ]
 
