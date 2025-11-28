@@ -1,6 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import axios from 'axios'; // 1. Import standard axios to bypass interceptors
 import axiosInstance from '../utils/axios';
 import { AuthContext } from '../contexts/AuthContent';
 
@@ -8,154 +9,86 @@ const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [rememberMe, setRememberMe] = useState(false);
-    // 1. Add isLoading state
     const [isLoading, setIsLoading] = useState(false);
-
+    const [rememberMe, setRememberMe] = useState(false);
+    
     const navigate = useNavigate();
     const { handleLogin } = useContext(AuthContext);
 
+    // Hardcoded base URL for the login call to ensure it doesn't use the interceptor instance
+    // This matches your settings in utils/axios.js
+    const API_URL = 'http://127.0.0.1:8000/api/';
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        e.stopPropagation();
         setError('');
-        setIsLoading(true); // Set loading to true immediately
+        setIsLoading(true);
         
         try {
-            // 1. Send login request
-            const response = await axiosInstance.post('/token/', {
+            // 2. Use standard 'axios' instead of 'axiosInstance'
+            // This prevents the 401 error from triggering the auto-refresh/redirect logic in your interceptor
+            const response = await axios.post(`${API_URL}token/`, {
                 username,
                 password
             });
             
             const accessToken = response.data.access;
             const refreshToken = response.data.refresh;
-
-            // 2. Determine storage type
+            
             const storage = rememberMe ? localStorage : sessionStorage;
 
-            // 3. Save tokens
             storage.setItem('access_token', accessToken);
             storage.setItem('refresh_token', refreshToken);
             
-            // 4. Update axios headers immediately
+            // 3. Now set the header for future requests using the instance
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             
-            // 5. Decode token to check roles
+            handleLogin(accessToken);
+            
             const decoded = jwtDecode(accessToken);
-
-            // 6. GRANT PERMISSION: This updates the global AuthContext
-            handleLogin(accessToken, decoded);
-
-            // 7. Redirect based on Role
             if (decoded.is_staff) {
                 navigate('/admin', { replace: true });
             } else {
                 navigate('/dashboard', { replace: true });
             }
-
         } catch (error) {
             console.error('Login failed:', error);
-            setError(error.response?.data?.detail || 'Login failed. Please check your ID and Password.');
+            
+            // 4. Handle errors without refreshing
+            if (error.response) {
+                // The request was made and the server responded with a status code
+                if (error.response.status === 401) {
+                    setError('Invalid Student ID or Password.');
+                } else {
+                    setError(error.response.data?.detail || 'Login failed. Please check your credentials.');
+                }
+            } else if (error.request) {
+                // The request was made but no response was received
+                setError('Server is not responding. Please check if the backend is running.');
+            } else {
+                // Something happened in setting up the request
+                setError('An unexpected error occurred. Please try again.');
+            }
         } finally {
-            setIsLoading(false); // Reset loading state regardless of success or failure
+            setIsLoading(false);
         }
     };
 
     return (
-        <div className="h-screen w-screen fixed inset-0 flex flex-col md:flex-row overflow-hidden">
-            {/* LEFT HALF - Background + Mobile Login Form */}
-            <div className="w-full md:w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[15px_0_25px_-15px_rgba(234,179,8,0.6)] z-10">
+        <div className="h-screen w-screen fixed inset-0 flex overflow-hidden">
+            {/* Left Half - Background Image */}
+            <div className="hidden md:block w-1/2 relative bg-[url('/ustp11.png')] bg-cover bg-center bg-no-repeat shadow-[15px_0_25px_-15px_rgba(234,179,8,0.6)] z-10">
                 <div className="relative z-10 h-screen flex flex-col items-center px-12 text-center">
-
-                    {/* Welcome text + logo */}
-                    <div className="flex flex-col items-center mt-30 md:mt-40">
-                        <h2 className="text-4xl font-bold text-indigo-950 mt-3 hidden md:block">Welcome Back!</h2>
-                        <img src="/logo.png" alt="logo" className="mx-auto h-90 w-auto fixed inset-y-15 -translate-y-6 md:translate-y-6" />
-                        <p className="text-indigo-950 font-bold italic mt-30 md:mt-20 ">Your Documents. Your Time.</p>
+                    <div className="flex flex-col items-center mt-40">
+                        <h2 className="text-4xl font-bold text-indigo-950 mt-3">Welcome Back!</h2>
+                        <img src ="/logo.png" alt="logo" className="mx-auto h-64 w-auto my-8" />
+                        <p className="text-indigo-950 font-bold italic mt-4">Your Documents. Your Time.</p>
                     </div>
-
-                    {/* Mobile-only Login form (Visible only on small screens) */}
-                    <div className="w-full max-w-md mt-20 md:hidden relative z-50"> 
-                        <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center hidden md:block">Login</h1>
-
-                        <form onSubmit={handleSubmit} className="w-full space-y-5 mt-5">
-                            <div className="space-y-2">
-                                <input
-                                    id="username-mobile"
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
-                                    placeholder="Student ID"
-                                    disabled={isLoading} // Disable input while loading
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <input
-                                    id="password-mobile"
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
-                                    placeholder="Password"
-                                    disabled={isLoading} // Disable input while loading
-                                />
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center">
-                                    <input
-                                        id="rememberMe-mobile"
-                                        type="checkbox"
-                                        checked={rememberMe}
-                                        onChange={() => setRememberMe(!rememberMe)}
-                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                        disabled={isLoading} // Disable checkbox while loading
-                                    />
-                                    <label htmlFor="rememberMe-mobile" className="ml-2 block text-sm text-gray-700">
-                                        Remember me
-                                    </label>
-                                </div>
-                                {/* Updated Link */}
-                                <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
-                                    Forgot password?
-                                </Link>
-                            </div>
-
-                            {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-                            
-                            {/* Mobile Login Button - Disabled when loading, shows loading text */}
-                            <button 
-                                type="submit"
-                                disabled={isLoading} 
-                                className={`w-full py-3 px-4 rounded-lg transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
-                                    isLoading 
-                                        ? 'bg-indigo-700 cursor-not-allowed' 
-                                        : 'bg-indigo-950 hover:bg-indigo-900 focus:ring-indigo-950'
-                                } text-white`}
-                            >
-                                {isLoading ? 'Logging in...' : 'Login'}
-                            </button>
-                        </form>
-
-                        {/* SIGN-UP LINK: Visible on mobile, placed below the Login button. (Replaced the old absolute div) */}
-                        <div className="mt-4 text-center">
-                            <p className="text-gray-600">
-                                Don't have an account? 
-                                <Link to="/register" className="text-indigo-950 font-semibold ml-2 hover:text-indigo-950">
-                                    Sign Up!
-                                </Link>
-                            </p>
-                        </div>
-                    </div>
-
-                    {/* Tagline box at bottom - Hidden on mobile, block on desktop */}
-                    <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-20 w-full max-w-md hidden md:block">
-                        <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-sm sm:text-base text-center sm:text-left break-words">Simplifying Service, One Request at a Time</p>
+                    
+                    <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-12 w-full max-w-md">
+                        <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit mx-auto">
+                            <p className="text-sm text-center">Simplifying Service, One Request at a Time</p>
                         </div>
                         <p className="text-neutral-500 text-sm leading-relaxed font-normal text-justify">
                             Powering a seamless process for the Office of the University Registrar at USTP-CDO—where academic transactions meet digital ease.
@@ -164,11 +97,14 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* RIGHT HALF - Desktop Login Form (Hidden on small screens) */}
-            <div className="hidden md:flex w-full md:w-1/2 bg-white flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
-              
-                {/* DESKTOP SIGN-UP LINK: Visible on desktop, placed top right */}
-                <div className="absolute top-8 right-8">
+            {/* Right Half - Login Form */}
+            <div className="w-full md:w-1/2 bg-white flex flex-col items-center justify-center p-8 md:p-12 relative overflow-y-auto">
+                {/* Background Blobs */}
+                <div className="absolute -bottom-10 -left-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full pointer-events-none"></div>
+                <div className="absolute -top-50 -right-50 w-[30rem] h-[30rem] bg-[radial-gradient(circle,rgba(255,237,195,0.7),transparent_70%)] rounded-full pointer-events-none"></div>
+                <div className="absolute -bottom-10 -right-50 w-[25rem] h-[25rem] bg-[radial-gradient(circle,rgba(255,237,195,0.6),transparent_70%)] rounded-full pointer-events-none"></div>
+
+                <div className="absolute top-8 right-8 z-20">
                     <p className="text-gray-600">
                         Don't have an account? 
                         <Link to="/register" className="text-indigo-950 font-semibold ml-2 hover:text-indigo-950">
@@ -177,7 +113,7 @@ const Login = () => {
                     </p>
                 </div>
 
-                <div className="w-full max-w-md">
+                <div className="w-full max-w-md z-10">
                     <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center">Login</h1>
 
                     <form onSubmit={handleSubmit} className="w-full space-y-6">
@@ -188,12 +124,10 @@ const Login = () => {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all"
                                 placeholder="Student ID"
-                                disabled={isLoading} // Disable input while loading
                             />
                         </div>
-
                         <div className="space-y-2">
                             <input
                                 id="password"
@@ -201,9 +135,8 @@ const Login = () => {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
-                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
+                                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all"
                                 placeholder="Password"
-                                disabled={isLoading} // Disable input while loading
                             />
                         </div>
 
@@ -215,29 +148,27 @@ const Login = () => {
                                     checked={rememberMe}
                                     onChange={() => setRememberMe(!rememberMe)}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    disabled={isLoading} // Disable checkbox while loading
                                 />
                                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                                     Remember me
                                 </label>
                             </div>
-                            {/* Updated Link */}
-                            <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
+                            
+                            <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950 font-medium">
                                 Forgot password?
                             </Link>
                         </div>
 
-                        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                        {error && (
+                            <div className="p-3 bg-red-50 border border-red-100 rounded-lg text-red-600 text-sm text-center font-medium animate-pulse">
+                                {error}
+                            </div>
+                        )}
                         
-                        {/* Desktop Login Button - Disabled when loading, shows loading text */}
                         <button 
                             type="submit"
                             disabled={isLoading}
-                            className={`w-full py-3 px-4 rounded-lg transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
-                                isLoading 
-                                    ? 'bg-indigo-700 cursor-not-allowed' 
-                                    : 'bg-indigo-950 hover:bg-indigo-900 focus:ring-indigo-950'
-                            } text-white`}
+                            className="w-full bg-indigo-950 text-white py-3 px-4 rounded-lg hover:bg-indigo-900 transition duration-300 font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-950 focus:ring-opacity-50 disabled:opacity-70"
                         >
                             {isLoading ? 'Logging in...' : 'Login'}
                         </button>

@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import Login from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -9,21 +9,18 @@ import ErrorBoundary from './components/ErrorBoundary';
 import HomePage from './pages/HomePage';
 import TermsOfService from './pages/TermsOfService';
 import PrivacyPolicy from './pages/PrivacyPolicy';
-import './App.css';
-// CHECK THIS IMPORT NAME: Usually it is AuthContext.js, not AuthContent
-import { AuthContext } from './contexts/AuthContent'; 
-import { Toaster } from 'react-hot-toast';
 import ForgotPassword from './pages/ForgotPassword';
+import { Toaster } from 'react-hot-toast';
+import './App.css';
+import { AuthContext } from './contexts/AuthContent'; 
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [user, setUser] = useState(null);
-  // NEW: Add a loading state
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check both local and session storage (see Login fix below)
     const token = localStorage.getItem('access_token') || sessionStorage.getItem('access_token');
     
     if (token) {
@@ -31,7 +28,6 @@ function App() {
         const decoded = jwtDecode(token);
         const currentTime = Date.now() / 1000;
 
-        // Check if token is expired
         if (decoded.exp < currentTime) {
            handleLogout();
         } else {
@@ -44,29 +40,64 @@ function App() {
         handleLogout();
       }
     }
-    // Set loading to false after check is done
     setLoading(false);
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('access_token'); // Clear session too
+    sessionStorage.removeItem('access_token');
     sessionStorage.removeItem('refresh_token');
     setIsAuthenticated(false);
     setIsAdmin(false);
     setUser(null);
   };
 
-  const handleLogin = (token, decoded) => {
-    setIsAuthenticated(true);
-    setIsAdmin(decoded.is_staff || false);
-    setUser(decoded);
+  // Updated to handle token decoding internally for safety
+  const handleLogin = (token) => {
+    try {
+        const decoded = jwtDecode(token);
+        setIsAuthenticated(true);
+        setIsAdmin(decoded.is_staff || false);
+        setUser(decoded);
+    } catch (error) {
+        console.error("Login Error:", error);
+    }
   };
 
-  // Prevent rendering routes until we know auth status
+  // --- ROUTE GUARD: PUBLIC ONLY ---
+  // If a user is logged in, this forces them to their dashboard.
+  const PublicRoute = ({ children }) => {
+    if (loading) return null; // Wait for initial auth check
+    
+    if (isAuthenticated) {
+      return <Navigate to={isAdmin ? "/admin" : "/dashboard"} replace />;
+    }
+    return children;
+  };
+
+  // --- ROUTE GUARD: PROTECTED ---
+  // Standard protection for dashboards
+  const ProtectedRoute = ({ children, adminOnly = false }) => {
+    if (loading) return null;
+
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+    
+    if (adminOnly && !isAdmin) {
+        return <Navigate to="/dashboard" replace />;
+    }
+
+    if (!adminOnly && isAdmin) {
+        return <Navigate to="/admin" replace />;
+    }
+
+    return children;
+  };
+
   if (loading) {
-    return <div className="flex h-screen w-screen items-center justify-center">Loading...</div>; 
+    return <div className="flex h-screen w-screen items-center justify-center text-[#1a1f63] font-bold">Loading iRequest...</div>; 
   }
 
   return (
@@ -76,27 +107,41 @@ function App() {
         <div>
           <Routes>
             <Route path="/" element={<Navigate to="/home" replace />} />
-            <Route path="/home" element={<HomePage />} />
+            
+            {/* --- PUBLIC ROUTES (Redirect to Dashboard if Logged In) --- */}
+            <Route path="/home" element={
+                <PublicRoute><HomePage /></PublicRoute>
+            } />
+            <Route path="/login" element={
+                <PublicRoute><Login /></PublicRoute>
+            } />
+            <Route path="/register" element={
+                <PublicRoute><RegisterPage /></PublicRoute>
+            } />
+            <Route path="/forgot-password" element={
+                <PublicRoute><ForgotPassword /></PublicRoute>
+            } />
+
+            {/* --- STATIC PAGES (Always Accessible) --- */}
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} /> 
-            <Route path="forgot-password" element={<ForgotPassword/>}/>
 
-            <Route
-              path="/login"
-              element={!isAuthenticated ? <Login /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} />}
-            />
-            <Route
-              path="/register"
-              element={!isAuthenticated ? <RegisterPage /> : <Navigate to={isAdmin ? "/admin" : "/dashboard"} />}
-            />
-
+            {/* --- PROTECTED ROUTES --- */}
             <Route
               path="/admin"
-              element={isAuthenticated && isAdmin ? <AdminDashboard /> : <Navigate to="/login" />}
+              element={
+                <ProtectedRoute adminOnly={true}>
+                    <AdminDashboard />
+                </ProtectedRoute>
+              }
             />
             <Route 
               path="/dashboard" 
-              element={isAuthenticated && !isAdmin ? <UserDashboard /> : <Navigate to="/login" />} 
+              element={
+                <ProtectedRoute adminOnly={false}>
+                    <UserDashboard />
+                </ProtectedRoute>
+              } 
             />
           </Routes>
         </div>
