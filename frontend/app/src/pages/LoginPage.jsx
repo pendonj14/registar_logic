@@ -9,19 +9,19 @@ const Login = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
-    // 1. Add isLoading state
     const [isLoading, setIsLoading] = useState(false);
 
     const navigate = useNavigate();
     const { handleLogin } = useContext(AuthContext);
 
     const handleSubmit = async (e) => {
+        // 1. PREVENT DEFAULT FORM SUBMISSION (Stops Reload)
         e.preventDefault();
+        
         setError('');
-        setIsLoading(true); // Set loading to true immediately
+        setIsLoading(true);
         
         try {
-            // 1. Send login request
             const response = await axiosInstance.post('/token/', {
                 username,
                 password
@@ -30,23 +30,17 @@ const Login = () => {
             const accessToken = response.data.access;
             const refreshToken = response.data.refresh;
 
-            // 2. Determine storage type
             const storage = rememberMe ? localStorage : sessionStorage;
 
-            // 3. Save tokens
             storage.setItem('access_token', accessToken);
             storage.setItem('refresh_token', refreshToken);
             
-            // 4. Update axios headers immediately
             axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             
-            // 5. Decode token to check roles
             const decoded = jwtDecode(accessToken);
 
-            // 6. GRANT PERMISSION: This updates the global AuthContext
             handleLogin(accessToken, decoded);
 
-            // 7. Redirect based on Role
             if (decoded.is_staff) {
                 navigate('/admin', { replace: true });
             } else {
@@ -55,9 +49,11 @@ const Login = () => {
 
         } catch (error) {
             console.error('Login failed:', error);
-            setError(error.response?.data?.detail || 'Login failed. Please check your ID and Password.');
+            // Handle specific error messages from backend if available
+            const errorMessage = error.response?.data?.detail || 'Login failed. Please check your ID and Password.';
+            setError(errorMessage);
         } finally {
-            setIsLoading(false); // Reset loading state regardless of success or failure
+            setIsLoading(false);
         }
     };
 
@@ -74,7 +70,7 @@ const Login = () => {
                         <p className="text-indigo-950 font-bold italic mt-30 md:mt-20 ">Your Documents. Your Time.</p>
                     </div>
 
-                    {/* Mobile-only Login form (Visible only on small screens) */}
+                    {/* Mobile-only Login form */}
                     <div className="w-full max-w-md mt-20 md:hidden relative z-50"> 
                         <h1 className="text-3xl font-bold text-indigo-950 mb-8 text-center hidden md:block">Login</h1>
 
@@ -88,7 +84,7 @@ const Login = () => {
                                     required
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Student ID"
-                                    disabled={isLoading} // Disable input while loading
+                                    disabled={isLoading}
                                 />
                             </div>
 
@@ -101,7 +97,7 @@ const Login = () => {
                                     required
                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                     placeholder="Password"
-                                    disabled={isLoading} // Disable input while loading
+                                    disabled={isLoading}
                                 />
                             </div>
 
@@ -113,13 +109,12 @@ const Login = () => {
                                         checked={rememberMe}
                                         onChange={() => setRememberMe(!rememberMe)}
                                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                        disabled={isLoading} // Disable checkbox while loading
+                                        disabled={isLoading}
                                     />
                                     <label htmlFor="rememberMe-mobile" className="ml-2 block text-sm text-gray-700">
                                         Remember me
                                     </label>
                                 </div>
-                                {/* Updated Link */}
                                 <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
                                     Forgot password?
                                 </Link>
@@ -127,7 +122,6 @@ const Login = () => {
 
                             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                             
-                            {/* Mobile Login Button - Disabled when loading, shows loading text */}
                             <button 
                                 type="submit"
                                 disabled={isLoading} 
@@ -141,7 +135,6 @@ const Login = () => {
                             </button>
                         </form>
 
-                        {/* SIGN-UP LINK: Visible on mobile, placed below the Login button. (Replaced the old absolute div) */}
                         <div className="mt-4 text-center">
                             <p className="text-gray-600">
                                 Don't have an account? 
@@ -152,7 +145,7 @@ const Login = () => {
                         </div>
                     </div>
 
-                    {/* Tagline box at bottom - Hidden on mobile, block on desktop */}
+                    {/* Tagline box at bottom */}
                     <div className="bg-white/10 backdrop-blur-md p-8 rounded mt-auto mb-20 w-full max-w-md hidden md:block">
                         <div className="bg-indigo-950 text-white p-2 rounded mb-4 w-fit flex flex-col sm:flex-row sm:items-center sm:justify-between">
                             <p className="text-sm sm:text-base text-center sm:text-left break-words">Simplifying Service, One Request at a Time</p>
@@ -164,10 +157,9 @@ const Login = () => {
                 </div>
             </div>
 
-            {/* RIGHT HALF - Desktop Login Form (Hidden on small screens) */}
+            {/* RIGHT HALF - Desktop Login Form */}
             <div className="hidden md:flex w-full md:w-1/2 bg-white flex-col items-center justify-center p-6 md:p-12 relative overflow-hidden">
               
-                {/* DESKTOP SIGN-UP LINK: Visible on desktop, placed top right */}
                 <div className="absolute top-8 right-8">
                     <p className="text-gray-600">
                         Don't have an account? 
@@ -190,7 +182,7 @@ const Login = () => {
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Student ID"
-                                disabled={isLoading} // Disable input while loading
+                                disabled={isLoading}
                             />
                         </div>
 
@@ -203,7 +195,7 @@ const Login = () => {
                                 required
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder-gray-500 transition-all duration-500"
                                 placeholder="Password"
-                                disabled={isLoading} // Disable input while loading
+                                disabled={isLoading}
                             />
                         </div>
 
@@ -215,13 +207,12 @@ const Login = () => {
                                     checked={rememberMe}
                                     onChange={() => setRememberMe(!rememberMe)}
                                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                                    disabled={isLoading} // Disable checkbox while loading
+                                    disabled={isLoading}
                                 />
                                 <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
                                     Remember me
                                 </label>
                             </div>
-                            {/* Updated Link */}
                             <Link to="/forgot-password" className="text-sm text-indigo-950 hover:text-blue-950">
                                 Forgot password?
                             </Link>
@@ -229,7 +220,6 @@ const Login = () => {
 
                         {error && <div className="text-red-500 text-sm text-center">{error}</div>}
                         
-                        {/* Desktop Login Button - Disabled when loading, shows loading text */}
                         <button 
                             type="submit"
                             disabled={isLoading}

@@ -108,7 +108,7 @@ def register_user(request):
             # Check if username already exists
             if User.objects.filter(username=data['username']).exists():
                 return Response(
-                    {'error': 'Username already exists'}, 
+                    {'error': 'Student ID already exists'}, 
                     status=status.HTTP_400_BAD_REQUEST
                 )
             

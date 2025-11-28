@@ -70,13 +70,13 @@ const StatsModal = ({ isOpen, onClose, requests }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 no-scrollbar">
       <div 
         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       ></div>
       
-      <div className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col transition-all duration-300">
+      <div className="relative bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col transition-all duration-300 no-scrollbar">
         
         {/* Header Section */}
         <div className="flex flex-col border-b border-gray-100 sticky top-0 bg-white z-20">
@@ -273,7 +273,7 @@ const StatsModal = ({ isOpen, onClose, requests }) => {
               {stats.total === 0 ? (
                   <div className="text-center py-10 text-gray-400 text-sm">No data for selected period</div>
               ) : (
-                <div className="max-h-[250px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+                <div className="max-h-[250px] overflow-y-auto pr-2 space-y-3 no-scrollbar">
                     {stats.sortedTypes.map(([type, count], index) => (
                     <div key={type} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
                         <div className="flex items-center gap-3">

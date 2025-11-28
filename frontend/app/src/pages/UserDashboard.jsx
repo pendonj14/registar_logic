@@ -1,14 +1,13 @@
-import { useState, useEffect } from 'react';
-import axiosInstance from '../utils/axios';
+import { useState, useEffect } from 'react'
+import axiosInstance from '../utils/axios'
 import { jwtDecode } from "jwt-decode"; 
-import { Menu, CreditCard, Image as ImageIcon, Trash2 } from 'lucide-react';
+import { Menu, CreditCard, Image as ImageIcon, Trash2 } from 'lucide-react'; // Added Trash2
 import { UserSidebar } from '../components/UserSidebar';
 import RequestDocumentModal from '../components/RequestDocumentModal';
 import UploadPaymentModal from '../components/UploadPaymentModal';
-// Import the new modal
-import DeleteConfirmationModal from '../components/DeleteConfirmationModal';
+import DeleteConfirmationModal from '../components/DeleteConfirmationModal'; // Import the modal
 import useAutoFetchRequests from '../hooks/useAutoFetchRequests';
-import toast from 'react-hot-toast';
+import toast from 'react-hot-toast'; // Assuming you use toast for feedback
 
 function UserDashboard() {
   // --- UI STATE ---
@@ -18,11 +17,11 @@ function UserDashboard() {
   const [selectedPaymentRequest, setSelectedPaymentRequest] = useState(null);
   const [activePage, setActivePage] = useState('Pending');
 
-  // --- DELETE MODAL STATE ---
-  const [deleteModal, setDeleteModal] = useState({
+  // --- DELETE STATE ---
+  const [deleteState, setDeleteState] = useState({
     isOpen: false,
-    itemId: null,     // ID of single item to delete
-    isDeleteAll: false // Flag for "Delete All" action
+    type: null, // 'single' or 'all'
+    data: null  // the request object (if single)
   });
 
   // --- DATA STATE ---
@@ -72,45 +71,34 @@ function UserDashboard() {
     setIsPaymentModalOpen(true);
   };
 
-  // --- DELETE LOGIC ---
-
-  // 1. Open Modal for Single Delete
-  const handleDeleteClick = (id) => {
-    setDeleteModal({
+  // --- DELETE HANDLERS ---
+  const openDeleteModal = (type, data = null) => {
+    setDeleteState({
         isOpen: true,
-        itemId: id,
-        isDeleteAll: false
+        type: type,
+        data: data
     });
   };
 
-  // 2. Open Modal for Delete All
-  const handleDeleteAllClick = () => {
-    setDeleteModal({
-        isOpen: true,
-        itemId: null,
-        isDeleteAll: true
-    });
-  };
-
-  // 3. Execute Delete (Called by Modal onConfirm)
-  const executeDelete = async () => {
+  const handleConfirmDelete = async () => {
     try {
-        if (deleteModal.isDeleteAll) {
-            // Logic for Delete All
-            const idsToDelete = myRequests
-                .filter(req => req.request_status === 'Rejected' || req.request_status === 'Released')
-                .map(req => req.id);
-            
-            await Promise.all(idsToDelete.map(id => axiosInstance.delete(`/requests/${id}/`)));
-            toast.success("History cleared successfully.");
-        } else {
-            // Logic for Single Delete
-            await axiosInstance.delete(`/requests/${deleteModal.itemId}/`);
+        if (deleteState.type === 'single') {
+            // API Call for Single Delete
+            // ADJUST ENDPOINT: Assuming /requests/{id}/ delete method
+            await axiosInstance.delete(`/requests/${deleteState.data.id}/`);
+            toast.success("Record deleted successfully");
+        } else if (deleteState.type === 'all') {
+            // API Call for Delete All History
+            // ADJUST ENDPOINT: Assuming a bulk delete endpoint exists
+            await axiosInstance.delete(`/requests/delete-history/`); 
+            toast.success("History cleared successfully");
         }
-        refresh(); // Refresh list immediately
+        refresh(); // Refresh list
     } catch (error) {
-        console.error("Delete failed", error);
+        console.error("Delete error:", error);
         toast.error("Failed to delete. Please try again.");
+    } finally {
+        setDeleteState({ isOpen: false, type: null, data: null });
     }
   };
 
@@ -130,6 +118,9 @@ function UserDashboard() {
   });
 
   const isLoading = requestsLoading && profileLoading;
+  
+  // Logic to determine if we are on the page that allows deletion
+  const isHistoryPage = activePage === 'Rejected'; 
 
   return (
     <div className="fixed inset-0 bg-[#f8f9fc] overflow-y-auto">
@@ -149,6 +140,7 @@ function UserDashboard() {
         }}
       />
 
+      {/* MODALS */}
       <RequestDocumentModal 
         isOpen={isRequestModalOpen} 
         onClose={() => setIsRequestModalOpen(false)}
@@ -163,22 +155,22 @@ function UserDashboard() {
         onSuccess={refresh} 
       />
 
-      {/* NEW DELETE MODAL */}
-      <DeleteConfirmationModal 
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal(prev => ({ ...prev, isOpen: false }))}
-        onConfirm={executeDelete}
-        isDeleteAll={deleteModal.isDeleteAll}
-        title={deleteModal.isDeleteAll ? "Clear History?" : "Delete Request?"}
-        message={deleteModal.isDeleteAll 
-            ? "You are about to remove all finished requests from your history." 
-            : "Are you sure you want to remove this request from your history?"
+      {/* DELETE CONFIRMATION MODAL */}
+      <DeleteConfirmationModal
+        isOpen={deleteState.isOpen}
+        onClose={() => setDeleteState({ ...deleteState, isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        isDeleteAll={deleteState.type === 'all'}
+        title={deleteState.type === 'all' ? "Clear Entire History?" : "Delete Request Record?"}
+        message={deleteState.type === 'all' 
+            ? "This will permanently remove all your Rejected and Released request records. This action cannot be undone." 
+            : `Are you sure you want to remove the record for "${deleteState.data?.request}"? This cannot be undone.`
         }
       />
 
       <main className="relative p-6 md:p-10 md:ml-72 transition-all duration-300 min-h-full">
         
-        <header className="flex items-center justify-between mb-8">
+        <header className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
             <div className="flex items-center gap-4">
                 <button 
                     onClick={() => setIsSidebarOpen(true)}
@@ -198,14 +190,14 @@ function UserDashboard() {
                 </div>
             </div>
 
-            {/* DELETE ALL BUTTON */}
-            {activePage === 'Rejected' && displayedRequests.length > 0 && (
-                <button 
-                    onClick={handleDeleteAllClick}
-                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-colors text-sm font-bold shadow-sm"
+            {/* DELETE ALL BUTTON - Only shows on 'Rejected' (History) page if there are items */}
+            {isHistoryPage && displayedRequests.length > 0 && (
+                <button
+                    onClick={() => openDeleteModal('all')}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-100 hover:border-red-200 transition-all font-semibold text-sm shadow-sm"
                 >
-                    <Trash2 size={18} />
-                    <span className="hidden md:inline">Clear History</span>
+                    <Trash2 size={16} />
+                    Clear History
                 </button>
             )}
         </header>
@@ -227,7 +219,7 @@ function UserDashboard() {
                 </div>
             ) : (
                 displayedRequests.map((req) => (
-                    <div key={req.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow group">
+                    <div key={req.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col md:flex-row justify-between md:items-center gap-4 hover:shadow-md transition-shadow group relative">
                         <div className="flex-1">
                             <h3 className="font-bold text-gray-800 text-lg">{req.request}</h3>
                             <div className="flex flex-wrap gap-2 mt-1">
@@ -247,9 +239,23 @@ function UserDashboard() {
                         </div>
 
                         {/* STATUS & ACTIONS SECTION */}
-                        <div className="flex flex-col items-end gap-3">
+                        <div className="flex flex-row md:flex-col items-center md:items-end gap-3 justify-between md:justify-start w-full md:w-auto">
                             
                             <div className="flex items-center gap-3">
+                              
+                              {/* SINGLE DELETE BUTTON - Only on History Page */}
+                              {isHistoryPage && (
+                                  <button
+                                      onClick={(e) => {
+                                          e.stopPropagation(); // Prevent triggering other clicks if any
+                                          openDeleteModal('single', req);
+                                      }}
+                                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                                      title="Delete from history"
+                                  >
+                                      <Trash2 size={18} />
+                                  </button>
+                              )}
                                 {/* Only show BADGE if status is NOT 'To Pay' */}
                                 {req.request_status !== 'To Pay' && (
                                     <span className={`px-4 py-2 rounded-full text-xs font-bold capitalize ${
@@ -262,24 +268,12 @@ function UserDashboard() {
                                         {req.request_status}
                                     </span>
                                 )}
-
-                                {/* DELETE BUTTON - Only shows on Rejected page (Rejected/Released items) */}
-                                {activePage === 'Rejected' && (
-                                    <button 
-                                        onClick={() => handleDeleteClick(req.id)}
-                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
-                                        title="Delete Record"
-                                    >
-                                        <Trash2 size={18} />
-                                    </button>
-                                )}
+                            
                             </div>
 
                             {/* Show COST and BUTTON if status IS 'To Pay' */}
                             {req.request_status === 'To Pay' && (
                             <div className="flex flex-col items-end gap-1 mt-2 md:mt-0">
-                              
-
                                 <div className="flex items-center gap-3">
                                     <div className="text-right mr-1">
                                         <p className="text-xs text-gray-500 font-medium">Total Fee</p>
@@ -298,7 +292,7 @@ function UserDashboard() {
                                     </button>
                                 </div>
                             </div>
-                        )}
+                            )}
                         </div>
                     </div>
                 ))

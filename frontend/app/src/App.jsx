@@ -79,7 +79,7 @@ function App() {
             <Route path="/home" element={<HomePage />} />
             <Route path="/terms" element={<TermsOfService />} />
             <Route path="/privacy" element={<PrivacyPolicy />} /> 
-            <Route path="forgot-password" element={<ForgotPassword/>}/>
+            <Route path="/forgot-password" element={<ForgotPassword/>}/>
 
             <Route
               path="/login"

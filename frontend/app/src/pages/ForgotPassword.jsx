@@ -27,6 +27,8 @@ const ForgotPassword = () => {
     // Helper to open date picker
     const handleCalendarClick = () => {
         if (dateInputRef.current) {
+            // Force type to 'date' immediately so showPicker works even if currently 'text'
+            dateInputRef.current.type = 'date';
             if (dateInputRef.current.showPicker) {
                 dateInputRef.current.showPicker();
             } else {
@@ -91,7 +93,7 @@ const ForgotPassword = () => {
     };
 
     return (
-        // Changed layout to min-h-screen for scrolling on small devices
+        // Changed to min-h-screen to allow scrolling on small screens
         <div className="min-h-screen w-full flex flex-col md:flex-row bg-white">
             
             {/* LEFT HALF - Background (Hidden on Mobile) */}
@@ -155,7 +157,6 @@ const ForgotPassword = () => {
                                 {step === 1 && (
                                     <>
                                         <div className="space-y-1">
-                                            <label htmlFor="username" className="block text-sm font-medium text-gray-700">Student ID</label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <User size={18} className="text-gray-400" />
@@ -174,7 +175,6 @@ const ForgotPassword = () => {
                                         </div>
 
                                         <div className="space-y-1">
-                                            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                                     <Mail size={18} className="text-gray-400" />
@@ -192,27 +192,34 @@ const ForgotPassword = () => {
                                             </div>
                                         </div>
 
+                                        {/* Updated Birth Date Field - No Label, Placeholder behavior */}
                                         <div className="space-y-1">
-                                            <label htmlFor="birth_date" className="block text-sm font-medium text-gray-700">Birth Date</label>
                                             <div className="relative">
-                                                {/* Calendar Icon - Now Clickable */}
+                                                {/* Calendar Icon Trigger */}
                                                 <button 
                                                     type="button"
                                                     onClick={handleCalendarClick}
-                                                    className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 hover:text-[#1a1f63] transition-colors focus:outline-none"
+                                                    className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400 hover:text-[#1a1f63] transition-colors focus:outline-none z-10"
                                                 >
                                                     <Calendar size={18} />
                                                 </button>
                                                 <input
                                                     ref={dateInputRef}
                                                     id="birth_date"
-                                                    type="date"
+                                                    // Show text type when empty to display placeholder
+                                                    type={formData.birth_date ? "date" : "text"}
+                                                    // Switch to date type on focus so picker works
+                                                    onFocus={(e) => e.target.type = "date"}
+                                                    // Revert to text if user leaves it empty to show placeholder again
+                                                    onBlur={(e) => {
+                                                        if (!e.target.value) e.target.type = "text";
+                                                    }}
                                                     value={formData.birth_date}
                                                     onChange={handleChange}
                                                     required
-                                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all bg-white cursor-pointer"
+                                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 transition-all bg-white cursor-pointer placeholder-gray-400"
+                                                    placeholder="Birth Date"
                                                     disabled={isLoading}
-                                                    onClick={handleCalendarClick} // Also open picker on input click
                                                 />
                                             </div>
                                         </div>

@@ -135,7 +135,7 @@ const RequestModal = ({
           )}
           <button
             onClick={() => onApprove(request)}
-            className="px-8 py-3 rounded-xl text-white bg-green-700 font-bold hover:bg-green-900 hover:scale-105 transition-all duration-200 shadow-lg shadow-indigo-200"
+            className="px-8 py-3 rounded-xl text-white bg-blue-950 font-bold hover:bg-blue-800 hover:scale-105 transition-all duration-200 shadow-lg shadow-indigo-200"
           >
             {approveLabel}
           </button>

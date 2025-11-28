@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { X, UploadCloud, CheckSquare, Square, ChevronDown, ChevronUp, Info } from 'lucide-react';
+import { X, UploadCloud, CheckSquare, Square, ChevronDown, ChevronUp, Info, Lock } from 'lucide-react';
 import axiosInstance from '../utils/axios';
 import RequirementsModal from './RequirementsModal';
-import toast, {Toaster} from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
-// Moved outside component to be stable and accessible
+// Document Options Data
 const documentOptions = [
   {
     label: "Walk-in / Personal Processing (Info Only)",
@@ -15,6 +15,12 @@ const documentOptions = [
     ]
   },
   {
+    label: "Optional Add-on",
+    options: [
+      "Rush Fee (P100)"
+    ]
+  },
+  {
     label: "Major Documents",
     options: [
       "Form 137 (P100)",
@@ -22,8 +28,7 @@ const documentOptions = [
       "Honorable Dismissal (P100)",
       "Correction of Name (P100)",
       "Transcript of Records (P125/pg)",
-      "Permit to Study (P100)",
-      "Rush Fee (P100)"
+      "Permit to Study (P100)"
     ]
   },
   {
@@ -59,7 +64,7 @@ const exemptDocuments = [
   "Permit to Study (P100)"
 ];
 
-const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
+const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram }) => {
   const [isRequirementsModalOpen, setIsRequirementsModalOpen] = useState(false);
   const [selectedRestrictedDoc, setSelectedRestrictedDoc] = useState("");
 
@@ -82,14 +87,12 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef(null); 
 
-  // --- FIX 1: POPULATE STATE FROM PROP CORRECTLY ---
-  // When modal opens, or userProgram loads, update the form state
+  // Populate program from prop
   useEffect(() => {
     if (isOpen) {
         setFormData(prev => ({
             ...prev,
-            // If userProgram exists, use it. Otherwise default to empty string.
-            college_program: userProgram || '' 
+            college_program: userProgram || prev.college_program || '' 
         }));
     }
   }, [isOpen, userProgram]);
@@ -108,19 +111,17 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
     };
   }, [dropdownRef, isOpen]);
 
+  // --- PRICE CALCULATION ---
   const totalPrice = useMemo(() => {
     const certOptions = documentOptions.find(g => g.label.includes("Certifications"))?.options || [];
 
     return formData.request.reduce((total, item) => {
       const match = item.match(/\(P(\d+)/);
-      
       if (match) {
         return total + parseInt(match[1], 10);
-      } 
-      else if (certOptions.includes(item)) {
+      } else if (certOptions.includes(item)) {
         return total + 80;
       }
-
       return total;
     }, 0);
   }, [formData.request]);
@@ -129,6 +130,21 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
     if (formData.request.length === 0) return false;
     return formData.request.some(doc => !exemptDocuments.includes(doc));
   }, [formData.request]);
+
+  const isRushFeeDisabled = useMemo(() => {
+      const otherDocs = formData.request.filter(doc => doc !== "Rush Fee (P100)");
+      return otherDocs.length === 0;
+  }, [formData.request]);
+
+  useEffect(() => {
+      if (isRushFeeDisabled && formData.request.includes("Rush Fee (P100)")) {
+          setFormData(prev => ({
+              ...prev,
+              request: prev.request.filter(item => item !== "Rush Fee (P100)")
+          }));
+      }
+  }, [formData.request, isRushFeeDisabled]);
+
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -147,6 +163,10 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
         setSelectedRestrictedDoc(docName);
         setIsRequirementsModalOpen(true);
         setIsDropdownOpen(false);
+        return;
+    }
+
+    if (docName === "Rush Fee (P100)" && isRushFeeDisabled) {
         return;
     }
 
@@ -169,11 +189,12 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
     if (file) setPreviewUrl(URL.createObjectURL(file));
   };
 
+  // --- MODIFIED SUBMIT HANDLER ---
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-     if (!formData.clearance_status) {
+    if (!formData.clearance_status) {
         toast.error("You must be cleared to submit a request.");
         setLoading(false);
         return;
@@ -197,10 +218,16 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
         return;
     }
 
-
     const dataToSend = new FormData();
 
-    let cleanedRequests = formData.request.map(item => {
+    // 1. Check if Rush Fee is selected
+    const isRushed = formData.request.includes("Rush Fee (P100)");
+
+    // 2. Filter out Rush Fee from the list so it isn't treated as a document
+    const activeRequests = formData.request.filter(item => item !== "Rush Fee (P100)");
+
+    // 3. Process the remaining documents (remove prices, handle Others)
+    let cleanedRequests = activeRequests.map(item => {
         if (item === "Others") return "Others"; 
         return item.replace(/\s*\(P.*?\)/g, "").trim(); 
     });
@@ -212,13 +239,18 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
         cleanedRequests = cleanedRequests.filter(item => item !== "Others");
     }
 
-    dataToSend.append("request", cleanedRequests.join(", "));
-    dataToSend.append("cost", totalPrice.toFixed(2));
+    // 4. Construct the final string
+    let finalRequestString = cleanedRequests.join(", ");
+    
+    // 5. Append "(Rushed)" if the rush fee checkbox was checked
+    if (isRushed) {
+        finalRequestString += " | Rushed |";
+    }
+
+    dataToSend.append("request", finalRequestString);
+    dataToSend.append("cost", totalPrice.toFixed(2)); // Note: totalPrice already includes the P100 from Rush Fee
     dataToSend.append("year_level", formData.year_level);
-    
-    // Ensure we send the value from the form data (which might be edited by user)
     dataToSend.append("college_program", formData.college_program);
-    
     dataToSend.append("affiliation", formData.affiliation);
     dataToSend.append("clearance_status", "true");
     dataToSend.append("is_graduate", formData.is_graduate ? "true" : "false");
@@ -242,12 +274,11 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
         },
       });
 
-      // Reset form
       setFormData({
         request: [],
         custom_request: "",
         year_level: "1st Year",
-        college_program: userProgram || "", // Reset to default on success
+        college_program: userProgram || "",
         is_graduate: false,
         last_attended: "",
         clearance_status: false,
@@ -294,7 +325,6 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
         <div className="p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
 
-            {/* Document Dropdown */}
             <div className="space-y-1 relative" ref={dropdownRef}>
               <label className="text-sm font-semibold text-gray-700">Document Type</label>
               <div 
@@ -318,7 +348,9 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
                         <div className={`sticky top-0 px-3 py-1.5 text-xs font-bold uppercase tracking-wider z-10 ${
                             group.label.includes("Walk-in") 
                                 ? "bg-orange-50 text-orange-600" 
-                                : "bg-gray-100 text-gray-500"
+                                : group.label.includes("Add-on")
+                                    ? "bg-yellow-50 text-yellow-700" 
+                                    : "bg-gray-100 text-gray-500"
                         }`}>
                             {group.label}
                         </div>
@@ -326,17 +358,19 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
                         {group.options.map((option, optIdx) => {
                             const isSelected = formData.request.includes(option);
                             const isRestricted = restrictedDocuments.includes(option);
+                            const isLocked = option === "Rush Fee (P100)" && isRushFeeDisabled;
 
                             return (
                             <div 
                                 key={optIdx}
                                 onClick={() => handleDocumentToggle(option)}
-                                className={`flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-all ${
-                                    isSelected 
-                                    ? 'bg-blue-50 text-[#1a1f63]' 
-                                    : isRestricted 
-                                        ? 'hover:bg-orange-50 text-gray-600' 
-                                        : 'hover:bg-gray-50 text-gray-700'
+                                className={`flex items-center justify-between px-3 py-2 rounded-lg transition-all ${
+                                    isLocked 
+                                        ? 'cursor-not-allowed opacity-50 bg-gray-50'
+                                        : 'cursor-pointer hover:bg-gray-50'
+                                } ${
+                                    isSelected ? 'bg-blue-50 text-[#1a1f63]' : 
+                                    isRestricted ? 'hover:bg-orange-50 text-gray-600' : 'text-gray-700'
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
@@ -345,7 +379,9 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
                                             ? <CheckSquare size={18} /> 
                                             : isRestricted 
                                                 ? <Info size={18} className="text-orange-400" /> 
-                                                : <Square size={18} />
+                                                : isLocked 
+                                                    ? <Lock size={16} className="text-gray-300" />
+                                                    : <Square size={18} />
                                         }
                                     </div>
                                     <span className="text-sm font-medium select-none">
@@ -383,8 +419,6 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
-              {/* Year Level */}
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-gray-700">Year Level</label>
                 <select
@@ -399,19 +433,14 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
                   <option value="4th Year">4th Year</option>
                   <option value="5th Year">5th Year</option>
                   <option value="Graduate Studies">Graduate Studies</option>
-                  <option value="Senior High School">Senior High School</option>
                 </select>
               </div>
 
-              {/* --- FIX 2: CONTROLLED INPUT --- */}
-              {/* Program Input */}
               <div className="space-y-1">
                 <label className="text-sm font-semibold text-gray-700">Program / Course</label>
                 <input
                   type="text"
                   name="college_program"
-                  // Bind directly to formData state, NOT the prop.
-                  // The prop was already loaded into formData by the useEffect.
                   value={formData.college_program}
                   onChange={handleChange}
                   placeholder="e.g. BS Information Technology"
@@ -461,12 +490,11 @@ const RequestDocumentModal = ({ isOpen, onClose, onSuccess, userProgram}) => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-sm font-semibold text-gray-700">Clearance Proof</label>
+              <label className="text-sm font-semibold text-gray-700">Clearance Proof (Optional)</label>
               <div className="relative border-2 border-dashed border-gray-300 rounded-xl p-6 text-center cursor-pointer hover:bg-gray-50 transition-colors group">
                 <input
                   type="file"
                   accept="image/*"
-                  required
                   onChange={handleFileChange}
                   className="absolute inset-0 opacity-0 cursor-pointer z-10"
                 />

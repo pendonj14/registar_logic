@@ -118,7 +118,7 @@ const RequirementsModal = ({ isOpen, onClose, documentName }) => {
           </button>
         </div>
 
-        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+        <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto no-scrollbar">
           <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded-r-lg flex items-start gap-3">
             <AlertCircle className="h-6 w-6 text-yellow-500 flex-shrink-0" />
             <div>
